@@ -1,0 +1,6 @@
+Invoking command in '/home/kraiwich/Lab1_ws/build/bot_bringup': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/kraiwich/Lab1_ws/src/bot_bringup -DCMAKE_INSTALL_PREFIX=/home/kraiwich/Lab1_ws/install/bot_bringup
+Invoked command in '/home/kraiwich/Lab1_ws/build/bot_bringup' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/kraiwich/Lab1_ws/src/bot_bringup -DCMAKE_INSTALL_PREFIX=/home/kraiwich/Lab1_ws/install/bot_bringup
+Invoking command in '/home/kraiwich/Lab1_ws/build/bot_bringup': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/kraiwich/Lab1_ws/build/bot_bringup -- -j16 -l16
+Invoked command in '/home/kraiwich/Lab1_ws/build/bot_bringup' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/kraiwich/Lab1_ws/build/bot_bringup -- -j16 -l16
+Invoking command in '/home/kraiwich/Lab1_ws/build/bot_bringup': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/kraiwich/Lab1_ws/build/bot_bringup
+Invoked command in '/home/kraiwich/Lab1_ws/build/bot_bringup' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/kraiwich/Lab1_ws/build/bot_bringup

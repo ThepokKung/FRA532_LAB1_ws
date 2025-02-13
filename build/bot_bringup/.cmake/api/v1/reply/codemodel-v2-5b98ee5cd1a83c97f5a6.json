@@ -1,0 +1,97 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-3134649fb7ecdc91df2a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"name" : "",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "bot_bringup",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ament_cmake_python_build_bot_bringup_egg::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ament_cmake_python_build_bot_bringup_egg-baf465f9626c9ff929ba.json",
+					"name" : "ament_cmake_python_build_bot_bringup_egg",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ament_cmake_python_copy_bot_bringup::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ament_cmake_python_copy_bot_bringup-4d7f8ac067a823836cb0.json",
+					"name" : "ament_cmake_python_copy_bot_bringup",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "bot_bringup_uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-bot_bringup_uninstall-8622492a813bc632ac83.json",
+					"name" : "bot_bringup_uninstall",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "cpp_node_test::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-cpp_node_test-2e3aa43da63b36073dac.json",
+					"name" : "cpp_node_test",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uninstall-1ce377523d7553aec2a9.json",
+					"name" : "uninstall",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/kraiwich/Lab1_ws/build/bot_bringup",
+		"source" : "/home/kraiwich/Lab1_ws/src/bot_bringup"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

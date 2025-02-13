@@ -1,0 +1,86 @@
+[0.006s] Invoking command in '/home/kraiwich/Lab1_ws/build/bot_bringup': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/kraiwich/Lab1_ws/src/bot_bringup -DCMAKE_INSTALL_PREFIX=/home/kraiwich/Lab1_ws/install/bot_bringup
+[0.093s] -- The C compiler identification is GNU 11.4.0
+[0.154s] -- The CXX compiler identification is GNU 11.4.0
+[0.161s] -- Detecting C compiler ABI info
+[0.217s] -- Detecting C compiler ABI info - done
+[0.224s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.225s] -- Detecting C compile features
+[0.226s] -- Detecting C compile features - done
+[0.229s] -- Detecting CXX compiler ABI info
+[0.287s] -- Detecting CXX compiler ABI info - done
+[0.292s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.292s] -- Detecting CXX compile features
+[0.292s] -- Detecting CXX compile features - done
+[0.294s] -- Found ament_cmake: 1.3.11 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.392s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.452s] -- Found rclcpp: 16.0.11 (/opt/ros/humble/share/rclcpp/cmake)
+[0.483s] -- Found rosidl_generator_c: 3.1.6 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.487s] -- Found rosidl_adapter: 3.1.6 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.492s] -- Found rosidl_generator_cpp: 3.1.6 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.501s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.512s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.542s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.544s] -- Found rmw_fastrtps_cpp: 6.2.7 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.616s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+[0.635s] -- Found FastRTPS: /opt/ros/humble/include  
+[0.659s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.666s] -- Looking for pthread.h
+[0.724s] -- Looking for pthread.h - found
+[0.725s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[0.781s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[0.782s] -- Found Threads: TRUE  
+[0.819s] -- Found rclpy: 3.3.15 (/opt/ros/humble/share/rclpy/cmake)
+[0.910s] -- Configuring done
+[0.914s] -- Generating done
+[0.916s] -- Build files have been written to: /home/kraiwich/Lab1_ws/build/bot_bringup
+[0.923s] Invoked command in '/home/kraiwich/Lab1_ws/build/bot_bringup' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake /home/kraiwich/Lab1_ws/src/bot_bringup -DCMAKE_INSTALL_PREFIX=/home/kraiwich/Lab1_ws/install/bot_bringup
+[0.923s] Invoking command in '/home/kraiwich/Lab1_ws/build/bot_bringup': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/kraiwich/Lab1_ws/build/bot_bringup -- -j16 -l16
+[0.958s] [ 50%] [32mBuilding CXX object CMakeFiles/cpp_node_test.dir/src/cpp_node.cpp.o[0m
+[0.965s] [ 50%] Built target ament_cmake_python_copy_bot_bringup
+[1.099s] running egg_info
+[1.099s] creating bot_bringup.egg-info
+[1.099s] writing bot_bringup.egg-info/PKG-INFO
+[1.099s] writing dependency_links to bot_bringup.egg-info/dependency_links.txt
+[1.099s] writing top-level names to bot_bringup.egg-info/top_level.txt
+[1.099s] writing manifest file 'bot_bringup.egg-info/SOURCES.txt'
+[1.101s] reading manifest file 'bot_bringup.egg-info/SOURCES.txt'
+[1.101s] writing manifest file 'bot_bringup.egg-info/SOURCES.txt'
+[1.116s] [ 50%] Built target ament_cmake_python_build_bot_bringup_egg
+[1.119s] [100%] [32m[1mLinking CXX executable cpp_node_test[0m
+[1.187s] [100%] Built target cpp_node_test
+[1.195s] Invoked command in '/home/kraiwich/Lab1_ws/build/bot_bringup' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/kraiwich/Lab1_ws/build/bot_bringup -- -j16 -l16
+[1.202s] Invoking command in '/home/kraiwich/Lab1_ws/build/bot_bringup': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/kraiwich/Lab1_ws/build/bot_bringup
+[1.205s] -- Install configuration: ""
+[1.205s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/environment/pythonpath.sh
+[1.206s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/environment/pythonpath.dsv
+[1.206s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/local/lib/python3.10/dist-packages/bot_bringup-0.0.0-py3.10.egg-info
+[1.206s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/local/lib/python3.10/dist-packages/bot_bringup-0.0.0-py3.10.egg-info/top_level.txt
+[1.206s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/local/lib/python3.10/dist-packages/bot_bringup-0.0.0-py3.10.egg-info/dependency_links.txt
+[1.206s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/local/lib/python3.10/dist-packages/bot_bringup-0.0.0-py3.10.egg-info/SOURCES.txt
+[1.206s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/local/lib/python3.10/dist-packages/bot_bringup-0.0.0-py3.10.egg-info/PKG-INFO
+[1.206s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/local/lib/python3.10/dist-packages/bot_bringup
+[1.206s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/local/lib/python3.10/dist-packages/bot_bringup/dummy_module.py
+[1.206s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/local/lib/python3.10/dist-packages/bot_bringup/__init__.py
+[1.229s] Listing '/home/kraiwich/Lab1_ws/install/bot_bringup/local/lib/python3.10/dist-packages/bot_bringup'...
+[1.229s] Compiling '/home/kraiwich/Lab1_ws/install/bot_bringup/local/lib/python3.10/dist-packages/bot_bringup/__init__.py'...
+[1.229s] Compiling '/home/kraiwich/Lab1_ws/install/bot_bringup/local/lib/python3.10/dist-packages/bot_bringup/dummy_module.py'...
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/lib/bot_bringup/dummy_script.py
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/lib/bot_bringup/cpp_node_test
+[1.232s] -- Set runtime path of "/home/kraiwich/Lab1_ws/install/bot_bringup/lib/bot_bringup/cpp_node_test" to ""
+[1.232s] -- Up-to-date: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/ament_index/resource_index/package_run_dependencies/bot_bringup
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/ament_index/resource_index/parent_prefix_path/bot_bringup
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/environment/ament_prefix_path.sh
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/environment/ament_prefix_path.dsv
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/environment/path.sh
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/environment/path.dsv
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/local_setup.bash
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/local_setup.sh
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/local_setup.zsh
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/local_setup.dsv
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/package.dsv
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/ament_index/resource_index/packages/bot_bringup
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/cmake/bot_bringupConfig.cmake
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/cmake/bot_bringupConfig-version.cmake
+[1.232s] -- Installing: /home/kraiwich/Lab1_ws/install/bot_bringup/share/bot_bringup/package.xml
+[1.234s] Invoked command in '/home/kraiwich/Lab1_ws/build/bot_bringup' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/kraiwich/Lab1_ws/build/bot_bringup
