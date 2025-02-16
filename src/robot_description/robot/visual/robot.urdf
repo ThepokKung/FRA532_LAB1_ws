@@ -40,16 +40,16 @@
         </collision>
     </link>
 
-    <!-- font left wheel -->
-    <joint name="font_left_wheel_joint" type="revolute">
+    <!-- front left wheel -->
+    <joint name="front_left_wheel_joint" type="revolute">
         <origin xyz="0.10 0.07 0.045" rpy="0.0 0.0 0.0"/>
         <parent link="base_link"/>
-        <child link="font_left_wheel_joint_link"/>
+        <child link="front_left_wheel_joint_link"/>
         <axis xyz="0.0 0.0 1.0"/>
         <limit lower="-1.57" upper="1.57" effort="0.0" velocity="0.0"/>
     </joint>
 
-    <link name="font_left_wheel_joint_link">
+    <link name="front_left_wheel_joint_link">
         <inertial>
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
             <mass value="0.1"/>
@@ -57,15 +57,15 @@
         </inertial>
     </link>
 
-    <joint name="font_left_wheel" type="continuous">
+    <joint name="front_left_wheel" type="continuous">
         <origin xyz="0.0 0.0 0.0" rpy="-1.57 0.0 0.0"/>
-        <parent link="font_left_wheel_joint_link"/>
-        <child link="font_left_wheel_link"/>
+        <parent link="front_left_wheel_joint_link"/>
+        <child link="front_left_wheel_link"/>
         <axis xyz="0.0 0.0 1.0"/>
         <limit lower="0.0" upper="0.0" effort="0.0" velocity="0.0"/>
     </joint>
 
-    <link name="font_left_wheel_link">
+    <link name="front_left_wheel_link">
         <inertial>
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
             <mass value="0.1"/>
@@ -89,16 +89,16 @@
         </collision>
     </link>
 
-    <!-- right front wheel -->
-    <joint name="font_right_wheel_joint" type="revolute">
+    <!-- front right wheel -->
+    <joint name="front_right_wheel_joint" type="revolute">
         <origin xyz="0.10 -0.07 0.045" rpy="0.0 0.0 0.0"/>
         <parent link="base_link"/>
-        <child link="font_right_wheel_joint_link"/>
+        <child link="front_right_wheel_joint_link"/>
         <axis xyz="0.0 0.0 1.0"/>
         <limit lower="-1.57" upper="1.57" effort="0.0" velocity="0.0"/>
     </joint>
 
-    <link name="font_right_wheel_joint_link">
+    <link name="front_right_wheel_joint_link">
         <inertial>
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
             <mass value="0.1"/>
@@ -106,15 +106,15 @@
         </inertial>
     </link>
 
-    <joint name="font_right_wheel" type="continuous">
+    <joint name="front_right_wheel" type="continuous">
         <origin xyz="0.0 0.0 0.0" rpy="-1.57 0.0 0.0"/>
-        <parent link="font_right_wheel_joint_link"/>
-        <child link="font_right_wheel_link"/>
+        <parent link="front_right_wheel_joint_link"/>
+        <child link="front_right_wheel_link"/>
         <axis xyz="0.0 0.0 1.0"/>
         <limit lower="0.0" upper="0.0" effort="0.0" velocity="0.0"/>
     </joint>
 
-    <link name="font_right_wheel_link">
+    <link name="front_right_wheel_link">
         <inertial>
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
             <mass value="0.1"/>

@@ -16,7 +16,9 @@ def generate_launch_description():
         executable='rviz2',
         name='rviz',
         arguments=['-d', rviz_file],
-        output='screen')
+        output='screen',
+        parameters=[{'use_sim_time': True}]
+    )
 
     robot_state_publisher = Node(
         package='robot_state_publisher',
@@ -27,11 +29,12 @@ def generate_launch_description():
     )
 
     # joint_state_publisher = Node(
-    #     package='joint_state_publisher',
-    #     executable='joint_state_publisher',
-    #     name='joint_state_publisher',
-    #     output='screen'
+    #      package='joint_state_publisher',
+    #      executable = 'joint_state_publisher',
+    #      name = 'joint_state_publisher',
+    #      output = 'screen'
     # )
+
     joint_state_publisher_gui = Node(
         package='joint_state_publisher_gui',
         executable='joint_state_publisher_gui',
@@ -42,6 +45,5 @@ def generate_launch_description():
     launch_description = LaunchDescription()
     launch_description.add_action(rviz)
     launch_description.add_action(robot_state_publisher)
-    # launch_description.add_action(joint_state_publisher)
     launch_description.add_action(joint_state_publisher_gui)
     return launch_description
