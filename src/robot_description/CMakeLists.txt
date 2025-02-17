@@ -48,7 +48,7 @@ install(TARGETS
 ################ INSTALL LAUNCH, ETC #################
 install(DIRECTORY
   launch
-  # meshes
+  meshes
   robot
   rviz
   DESTINATION share/${PROJECT_NAME})
