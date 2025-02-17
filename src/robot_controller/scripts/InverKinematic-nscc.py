@@ -21,6 +21,7 @@ class InverseKinematicsNSCC(Node):
         self.declare_parameter('wheelbase', 0.065)  # L = 6.5 cm
 
         self.L = self.get_parameter('wheelbase').value
+        self.W = self.get_parameter('robot_width').value
 
         # Subscriber to cmd_vel
         self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
@@ -34,7 +35,7 @@ class InverseKinematicsNSCC(Node):
     def cmd_vel_callback(self, msg):
         X = msg.linear.x  # Forward velocity
         omega = msg.angular.z  # Yaw rate
-        W = self.get_parameter('robot_width').value  # Width of the robot
+        # W = self.get_parameter('robot_width').value  # Width of the robot
 
         # Compute turning radius
         if omega != 0:
@@ -42,8 +43,8 @@ class InverseKinematicsNSCC(Node):
                 R = X / omega  # Turning radius
             else:
                 R = float('inf')
-            delta_left = atan(self.L / (R - W / 2))
-            delta_right = atan(self.L / (R + W / 2))
+            delta_left = atan(self.L / (R - self.W / 2))
+            delta_right = atan(self.L / (R + self.W / 2))
         else:
             R = float('inf')
             delta_left = 0.0
@@ -54,8 +55,8 @@ class InverseKinematicsNSCC(Node):
         V_rw = X
 
         # Compute left and right wheel radii
-        R_left = R - (W / 2)
-        R_right = R + (W / 2)
+        R_left = R - (self.W / 2)
+        R_right = R + (self.W / 2)
 
         # Compute individual wheel speeds under No-Slip Condition Constraints
         if R == float('inf'):  # If robot is moving straight
@@ -69,11 +70,12 @@ class InverseKinematicsNSCC(Node):
 
         # Publish wheel speeds
         wheel_speeds_msg = Float32MultiArray()
-        wheel_speeds_msg.data = [V_fl, V_fr, V_rl, V_rr, delta_left, delta_right]
+        wheel_speeds_msg.data = [V_fl, V_fr,V_rl, V_rr, delta_left, delta_right]
         self.wheel_speed_pub.publish(wheel_speeds_msg)
 
         self.get_logger().info(f"Steering Angles: Left={delta_left:.2f} rad, Right={delta_right:.2f} rad")
         self.get_logger().info(f"Wheel Speeds: FL={V_fl:.2f}, FR={V_fr:.2f}, RL={V_rl:.2f}, RR={V_rr:.2f}")
+
 
 def main(args=None):
     rclpy.init(args=args)
