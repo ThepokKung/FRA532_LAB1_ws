@@ -7,9 +7,9 @@ from std_msgs.msg import Float32MultiArray
 from math import atan, tan, cos
 
 
-class InverseKinematics(Node):
+class InverseKinematicsNSCC(Node):
     def __init__(self):
-        super().__init__('inverse_kinematics_basic_model')
+        super().__init__('inverse_kinematics_nscc')
 
         # Load robot parameters
         self.declare_parameter('wheel_radius', 0.045)  # 4.5 cm
@@ -29,7 +29,7 @@ class InverseKinematics(Node):
         self.wheel_speed_pub = self.create_publisher(
             Float32MultiArray, '/wheel_speeds', 10)
 
-        self.get_logger().info("Inverse Kinematics Basic Model node has started.")
+        self.get_logger().info("Inverse Kinematics NSCC Model node has started.")
 
     def cmd_vel_callback(self, msg):
         X = msg.linear.x  # Forward velocity
@@ -39,34 +39,29 @@ class InverseKinematics(Node):
         # Compute turning radius
         if omega != 0:
             if X != 0:
-                z = atan(self.L * omega / X)  # Small angle assumption
-                R = self.L / (2 * tan(z))
+                R = X / omega  # Turning radius
             else:
-                z = 0.0
                 R = float('inf')
-            delta = atan(2 * tan(z))
-            delta_left = delta
-            delta_right = delta
+            delta_left = atan(self.L / (R - W / 2))
+            delta_right = atan(self.L / (R + W / 2))
         else:
-            z = 0.0
             R = float('inf')
-            delta = 0.0
             delta_left = 0.0
             delta_right = 0.0
 
         # Compute front and rear wheel speeds
-        V_fw = X * cos(delta - z)
-        V_rw = X * cos(z)
+        V_fw = X
+        V_rw = X
 
         # Compute left and right wheel radii
-        R_left = R + (W / 2)
-        R_right = R - (W / 2)
+        R_left = R - (W / 2)
+        R_right = R + (W / 2)
 
-        # Compute individual wheel speeds
+        # Compute individual wheel speeds under No-Slip Condition Constraints
         if R == float('inf'):  # If robot is moving straight
             V_fl = V_fr = V_fw
             V_rl = V_rr = V_rw
-        else:  # If robot is turning
+        else:  # If robot is turning, adjust speeds to satisfy no-slip conditions
             V_fl = V_fw * (R_left / R)
             V_fr = V_fw * (R_right / R)
             V_rl = V_rw * (R_left / R)
@@ -82,7 +77,7 @@ class InverseKinematics(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = InverseKinematics()
+    node = InverseKinematicsNSCC()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
