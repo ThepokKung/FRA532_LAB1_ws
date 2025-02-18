@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
+import os , xacro
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-import os
-import xacro
-
+# from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
+
+    use_sim_time = LaunchConfiguration('use_sim_time')
+
     pkg_share = get_package_share_directory('robot_description')
     # urdf_file = os.path.join(pkg_share, 'robot', 'visual', 'robot.urdf')
-    urdf_file = os.path.join(pkg_share, 'robot', 'visual', 'robot.urdf.xacro')
+    # urdf_file = os.path.join(pkg_share, 'robot', 'visual', 'robot.urdf.xacro')
+    xacro_file = os.path.join(pkg_share, 'description', 'robot-main.xacro')
+    robot_description_config = xacro.process_file(xacro_file)
+    params = {'robot_description': robot_description_config.toxml(), 'use_sim_time': use_sim_time}
+
     rviz_file = os.path.join(pkg_share, 'rviz', 'display.rviz')
 
     rviz = Node(
@@ -26,7 +33,7 @@ def generate_launch_description():
         executable='robot_state_publisher',
         name='robot_state_publisher',
         output='screen',
-        parameters=[{'robot_description': open(urdf_file).read()}]
+        parameters=[params]
     )
 
     # joint_state_publisher = Node(
