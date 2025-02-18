@@ -1,50 +1,119 @@
+import os
+from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.substitutions import LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
-from launch.substitutions import PathJoinSubstitution
+from launch.actions import IncludeLaunchDescription, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
+import xacro
 
 def generate_launch_description():
-    robot_description_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                FindPackageShare('robot_description'),
-                'launch',
-                'rviz-display.launch.py'
-            ])
-        ])
+    robot_des_share = get_package_share_directory('robot_description')
+    robot_con_share = get_package_share_directory('robot_controller')
+    rsp_file = os.path.join(robot_des_share, 'launch', 'rst.launch.py')
+    rviz_file = os.path.join(robot_con_share, 'rviz', 'displaysim.rviz')
+
+    rsp = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                rsp_file
+            ]
+        ),
+        launch_arguments={"use_sim_time":"true"}.items()
     )
 
-    gazebo_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                FindPackageShare('gazebo_ros'),
-                'launch',
-                'gazebo.launch.py'
-            ])
-        ]),
-        launch_arguments={'world': PathJoinSubstitution([
-            FindPackageShare('robot_sim'),
-            'world',
-            'basic.world'
-        ])}.items()
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                os.path.join(
+                    get_package_share_directory("gazebo_ros"),
+                    "launch",
+                    "gazebo.launch.py"
+                )
+            ]
+        )
     )
 
     spawn_entity = Node(
-        package='gazebo_ros',
-        executable='spawn_entity.py',
-        arguments=['-entity', 'limo', '-file', PathJoinSubstitution([
-            FindPackageShare('robot_description'),
-            'robot',
-            'visual',
-            'robot.urdf'
-        ])],
-        output='screen'
+        package="gazebo_ros",
+        executable="spawn_entity.py",
+        arguments=[
+            "-topic", "robot_description",
+            "-entity", "fake_limo",
+        ],
+        output = "screen"
+    )
+    
+    controller = Node(
+        package="my_controller",
+        executable="diff_drive.py"
+    )
+    
+    joint_state_broadcaster_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
+        parameters=[{"use_sim_time": False}]
+    )
+    
+    velocity_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["velocity_controllers", "--controller-manager", "/controller_manager"],
+        parameters=[{"use_sim_time": False}]
     )
 
-    return LaunchDescription([
-        robot_description_launch,
-        gazebo_launch,
-        spawn_entity
-    ])
+    steering_position_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["steering_position_controller", "--controller-manager", "/controller_manager"],
+        parameters=[{"use_sim_time": False}]
+    )
+
+    rviz = Node(
+        package="rviz2",
+        executable="rviz2",
+        arguments=[
+            "-d", rviz_file
+        ],
+        output = "screen"
+    )
+
+    launch_description = LaunchDescription()
+
+    launch_description.add_action(
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=spawn_entity,
+                on_exit=[joint_state_broadcaster_spawner],
+            )
+        )
+    )
+
+    launch_description.add_action(
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=joint_state_broadcaster_spawner,
+                on_exit=[velocity_controller_spawner],
+            )
+        )
+    )
+
+    launch_description.add_action(
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=velocity_controller_spawner,
+                on_exit=[steering_position_controller_spawner],
+            )
+        )
+    )
+
+    # Add the rest of the nodes and launch descriptions
+    launch_description.add_action(rviz)
+    launch_description.add_action(gazebo)
+    launch_description.add_action(spawn_entity)
+    # launch_description.add_action(controller)
+    launch_description.add_action(rsp)
+    return launch_description
