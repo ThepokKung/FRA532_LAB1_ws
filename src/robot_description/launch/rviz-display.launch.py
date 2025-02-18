@@ -8,8 +8,8 @@ import xacro
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('robot_description')
-    urdf_file = os.path.join(pkg_share, 'robot', 'visual', 'robot.urdf')
-    # urdf_file = os.path.join(pkg_share, 'robot', 'visual', 'robot.urdf.xacro')
+    # urdf_file = os.path.join(pkg_share, 'robot', 'visual', 'robot.urdf')
+    urdf_file = os.path.join(pkg_share, 'robot', 'visual', 'robot.urdf.xacro')
     rviz_file = os.path.join(pkg_share, 'rviz', 'display.rviz')
 
     rviz = Node(
