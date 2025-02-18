@@ -49,8 +49,9 @@ install(TARGETS
 install(DIRECTORY
   launch
   meshes
-  robot
+  # robot
   rviz
+  description
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()
