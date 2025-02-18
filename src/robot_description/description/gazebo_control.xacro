@@ -28,14 +28,14 @@
             <command_interface name="velocity">
                 <param name="min">-5</param>
                 <param name="max">5</param>
-              </command_interface>
-              <state_interface name="position">
+            </command_interface>
+            <state_interface name="position">
                 <param name="initial_value">0.0</param>
-              </state_interface>
-              <state_interface name="velocity">
+            </state_interface>
+            <state_interface name="velocity">
                 <param name="initial_value">0.0</param>
-              </state_interface>
-              <state_interface name="effort"/>
+            </state_interface>
+            <state_interface name="effort"/>
         </joint>
 
         <!-- front_right_wheel -->
@@ -43,14 +43,14 @@
             <command_interface name="velocity">
                 <param name="min">-5</param>
                 <param name="max">5</param>
-              </command_interface>
-              <state_interface name="position">
+            </command_interface>
+            <state_interface name="position">
                 <param name="initial_value">0.0</param>
-              </state_interface>
-              <state_interface name="velocity">
+            </state_interface>
+            <state_interface name="velocity">
                 <param name="initial_value">0.0</param>
-              </state_interface>
-              <state_interface name="effort"/>
+            </state_interface>
+            <state_interface name="effort"/>
         </joint>
 
         <!-- back_left_wheel -->
@@ -58,14 +58,14 @@
             <command_interface name="velocity">
                 <param name="min">-5</param>
                 <param name="max">5</param>
-              </command_interface>
-              <state_interface name="position">
+            </command_interface>
+            <state_interface name="position">
                 <param name="initial_value">0.0</param>
-              </state_interface>
-              <state_interface name="velocity">
+            </state_interface>
+            <state_interface name="velocity">
                 <param name="initial_value">0.0</param>
-              </state_interface>
-              <state_interface name="effort"/>
+            </state_interface>
+            <state_interface name="effort"/>
         </joint>
 
         <!-- back_right_wheel -->
@@ -73,14 +73,38 @@
             <command_interface name="velocity">
                 <param name="min">-5</param>
                 <param name="max">5</param>
-              </command_interface>
-              <state_interface name="position">
+            </command_interface>
+            <state_interface name="position">
                 <param name="initial_value">0.0</param>
-              </state_interface>
-              <state_interface name="velocity">
+            </state_interface>
+            <state_interface name="velocity">
                 <param name="initial_value">0.0</param>
-              </state_interface>
-              <state_interface name="effort"/>
+            </state_interface>
+            <state_interface name="effort"/>
+        </joint>
+
+        <!-- front_left_steering_joint -->
+        <joint name="front_left_steering_joint">
+            <command_interface name="position"/>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="effort"/>
+        </joint>
+
+        <!-- front_right_steering_joint -->
+        <joint name="front_right_steering_joint">
+            <command_interface name="position"/>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="effort"/>
         </joint>
     </ros2_control>
 

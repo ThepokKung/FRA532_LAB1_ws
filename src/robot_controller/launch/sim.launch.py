@@ -15,23 +15,9 @@ def generate_launch_description():
     rsp_file = os.path.join(robot_des_share, 'launch', 'rst.launch.py')
     rviz_file = os.path.join(robot_con_share, 'rviz', 'displaysim.rviz')
 
-    # rviz = Node(
-    #     package='rviz2',
-    #     executable='rviz2',
-    #     name='rviz',
-    #     arguments=['-d', rviz_file],
-    #     output='screen',
-    #     parameters=[{'use_sim_time': True}]
-    # )
-
     rsp = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [
-                # os.path.join(
-                #     get_package_share_directory(pkg_name),
-                #     "launch",
-                #     "rsp.launch.py"  # Ensure this file exists in the specified directory
-                # )
                 rsp_file
             ]
         ),
@@ -61,8 +47,8 @@ def generate_launch_description():
     )
     
     controller = Node(
-    	package="my_controller",
-    	executable="diff_drive.py"
+        package="my_controller",
+        executable="diff_drive.py"
     )
     
     joint_state_broadcaster_spawner = Node(
@@ -72,11 +58,17 @@ def generate_launch_description():
         parameters=[{"use_sim_time": False}]
     )
     
-
     velocity_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["velocity_controllers", "--controller-manager", "/controller_manager"],
+        parameters=[{"use_sim_time": False}]
+    )
+
+    steering_position_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["steering_position_controller", "--controller-manager", "/controller_manager"],
         parameters=[{"use_sim_time": False}]
     )
 
@@ -105,6 +97,15 @@ def generate_launch_description():
             event_handler=OnProcessExit(
                 target_action=joint_state_broadcaster_spawner,
                 on_exit=[velocity_controller_spawner],
+            )
+        )
+    )
+
+    launch_description.add_action(
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=velocity_controller_spawner,
+                on_exit=[steering_position_controller_spawner],
             )
         )
     )
