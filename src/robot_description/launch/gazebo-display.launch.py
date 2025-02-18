@@ -14,7 +14,7 @@ def generate_launch_description():
     # urdf_file = os.path.join(pkg_share, 'robot', 'visual', 'robot.urdf.xacro')
     xacro_file = os.path.join(pkg_share, 'description', 'robot-main.xacro')
     robot_description_config = xacro.process_file(xacro_file)
-    params = {'robot_description': robot_description_config.toxml(), 'use_sim_time': use_sim_time}
+    # params = {'robot_description': robot_description_config.toxml(), 'use_sim_time': use_sim_time}
 
     rviz_launch_file = os.path.join(
         pkg_share, 'launch', 'rviz-display.launch.py')
@@ -30,7 +30,8 @@ def generate_launch_description():
         Node(
             package='gazebo_ros',
             executable='spawn_entity.py',
-            arguments=['-entity', 'fake-limo', '-file', urdf_file],
+            # arguments=['-entity', 'fake-limo', '-file', urdf_file],
+            arguments=['-entity', 'fake-limo'],
             output='screen'
         ),
     ])
