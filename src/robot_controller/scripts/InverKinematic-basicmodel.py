@@ -70,10 +70,9 @@ class InverseKinematics(Node):
         steering_angles_msg.data = [delta_left, delta_right]
         self.steering_control_pub.publish(steering_angles_msg)
 
-        self.get_logger().info(
-            f"Steering Angles: Left={delta_left:.2f} rad, Right={delta_right:.2f} rad")
-        self.get_logger().info(
-            f"Wheel Speeds: FL={V_fl:.2f}, FR={V_fr:.2f}, RL={V_rl:.2f}, RR={V_rr:.2f}")
+        self.get_logger().info(f"Commanded δ: {delta_cmd:.3f} rad, R: {R if R != float('inf') else 'inf'}")
+        self.get_logger().info(f"Steering: Left={delta_left:.3f} rad, Right={delta_right:.3f} rad")
+        self.get_logger().info(f"Wheel Speeds: FL={V_fl:.2f}, FR={V_fr:.2f}, RL={V_rl:.2f}, RR={V_rr:.2f}")
 
 
 def main(args=None):
