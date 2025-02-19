@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
-from math import atan
+from math import atan,tan
 
 
 class InverseKinematics(Node):
@@ -34,11 +34,14 @@ class InverseKinematics(Node):
 
         # คำนวณรัศมีการเลี้ยว
         if omega != 0:
-            R = X / omega  # รัศมีโค้ง
-            delta = atan(self.L / R)  # มุมเลี้ยว
+            R = self.L / (2 * tan(omega))
+            delta = atan(self.L / R) 
         else:
             R = float('inf')
             delta = 0.0
+
+        # Ensure delta is within the specified range
+        delta = max(min(delta, 0.7854), -0.7854)
 
         delta_left = delta
         delta_right = delta
@@ -63,7 +66,6 @@ class InverseKinematics(Node):
 
         self.get_logger().info(f"Steering Angles: Left={delta_left:.2f} rad, Right={delta_right:.2f} rad")
         self.get_logger().info(f"Wheel Speeds: FL={V_fl:.2f}, FR={V_fr:.2f}, RL={V_rl:.2f}, RR={V_rr:.2f}")
-
 
 def main(args=None):
     rclpy.init(args=args)
