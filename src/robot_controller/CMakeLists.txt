@@ -27,7 +27,11 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  scripts/dummy_script.py
+  scripts/InverKinematic-basicmodel.py
+  scripts/InverKinematic-nscc.py
+  scripts/ForwardKinematic-Double.py
+  scripts/ForwardKinematic-Single.py
+  scripts/ForwardKinematic-Yaw.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

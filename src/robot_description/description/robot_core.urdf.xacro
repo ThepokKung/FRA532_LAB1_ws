@@ -19,7 +19,7 @@
 
     <!-- chassis link -->
     <joint name="chassis_joint" type="fixed">
-        <origin xyz="0.0 0.0 0.095" rpy="0.0 0.0 1.57"/>
+        <origin xyz="0.0 0.0 0.095" rpy="0.0 0.0 0.0"/>
         <parent link="base_link"/>
         <child link="chassis"/>
     </joint>
@@ -28,14 +28,14 @@
         <visual name="">
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
             <geometry>
-                <box size="0.13 0.20 0.1"/>
+                <box size="0.20 0.13 0.1"/>
             </geometry>
             <material name="white"/>
         </visual>
         <collision>
             <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
             <geometry>
-                <box size="0.13 0.20 0.1"/>
+                <box size="0.20 0.13 0.1"/>
             </geometry>
         </collision>
         <xacro:inertial_box mass="3.0" x="0.13" y="0.2" z="0.1">
@@ -57,8 +57,8 @@
     </link>
 
     <joint name="front_left_steering_joint" type="revolute">
-        <origin xyz="0.10 0.07 0.045" rpy="0.0 0.0 0.0"/>
-        <parent link="base_link"/>
+        <origin xyz="0.10 0.07 -0.045" rpy="0.0 0.0 0.0"/>
+        <parent link="chassis"/>
         <child link="front_left_wheel_joint_link"/>
         <axis xyz="0.0 0.0 1.0"/>
         <limit lower="-0.7854" upper="0.7854" effort="0.0" velocity="0.0"/>
@@ -110,8 +110,8 @@
     </link>
 
     <joint name="front_right_steering_joint" type="revolute">
-        <origin xyz="0.10 -0.07 0.045" rpy="0.0 0.0 0.0"/>
-        <parent link="base_link"/>
+        <origin xyz="0.10 -0.07 -0.045" rpy="0.0 0.0 0.0"/>
+        <parent link="chassis"/>
         <child link="front_right_wheel_joint_link"/>
         <axis xyz="0.0 0.0 1.0"/>
         <limit lower="-0.7854" upper="0.7854" effort="0.0" velocity="0.0"/>
@@ -155,8 +155,8 @@
 
     <!-- back left wheel -->
     <joint name="back_left_wheel" type="continuous">
-        <origin xyz="-0.10 0.07 0.045" rpy="-1.57 0.0 0.0"/>
-        <parent link="base_link"/>
+        <origin xyz="-0.10 0.07 -0.045" rpy="-1.57 0.0 0.0"/>
+        <parent link="chassis"/>
         <child link="back_left_wheel_link"/>
         <axis xyz="0.0 0.0 1.0"/>
     </joint>
@@ -191,8 +191,8 @@
 
     <!-- back right wheel -->
     <joint name="back_right_wheel" type="continuous">
-        <origin xyz="-0.10 -0.07 0.045" rpy="-1.57 0.0 0.0"/>
-        <parent link="base_link"/>
+        <origin xyz="-0.10 -0.07 -0.045" rpy="-1.57 0.0 0.0"/>
+        <parent link="chassis"/>
         <child link="back_right_wheel_link"/>
         <axis xyz="0.0 0.0 1.0"/>
         <limit lower="0.0" upper="0.0" effort="0.0" velocity="0.0"/>
