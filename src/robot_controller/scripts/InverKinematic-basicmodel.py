@@ -56,10 +56,10 @@ class InverseKinematics(Node):
         if R == float('inf'):
             V_fl = V_fr = V_rl = V_rr = X
         else:
-            V_fl = X * (R - self.W / 2) / R
-            V_fr = X * (R + self.W / 2) / R
+            V_fl = V_rl= X * (R - self.W / 2) / R
+            V_fr = V_rr = X * (R + self.W / 2) / R
             # ในรถ Ackermann ล้อหลังมักใช้ความเร็วเฉลี่ย X
-            V_rl = V_rr = X
+            # V_rl = V_rr = X
 
         # ส่งค่าควบคุม
         velocity_control_msg = Float64MultiArray()
@@ -73,7 +73,6 @@ class InverseKinematics(Node):
         self.get_logger().info(f"Commanded δ: {delta_cmd:.3f} rad, R: {R if R != float('inf') else 'inf'}")
         self.get_logger().info(f"Steering: Left={delta_left:.3f} rad, Right={delta_right:.3f} rad")
         self.get_logger().info(f"Wheel Speeds: FL={V_fl:.2f}, FR={V_fr:.2f}, RL={V_rl:.2f}, RR={V_rr:.2f}")
-
 
 def main(args=None):
 

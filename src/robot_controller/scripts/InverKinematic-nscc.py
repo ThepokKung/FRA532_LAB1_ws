@@ -54,10 +54,10 @@ class InverseKinematics(Node):
         if R == float('inf'):
             V_fl = V_fr = V_rl = V_rr = X
         else:
-            V_fl = X * (R - self.W / 2) / R
-            V_fr = X * (R + self.W / 2) / R
+            V_fl = V_rl = X * (R - self.W / 2) / R
+            V_fr = V_rr= X * (R + self.W / 2) / R
             # ในรถ Ackermann ล้อหลังมักใช้ความเร็วเฉลี่ย X
-            V_rl = V_rr = X
+            # V_rl = V_rr = X
 
         # ส่งค่าควบคุมความเร็วล้อ
         vel_msg = Float64MultiArray()
