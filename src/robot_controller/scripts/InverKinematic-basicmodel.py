@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
-from math import atan
+from math import atan, tan
 
 
 class InverseKinematics(Node):
@@ -12,45 +12,54 @@ class InverseKinematics(Node):
         super().__init__('inverse_kinematics_basic_model')
 
         # Load robot parameters
-        self.declare_parameter('wheel_radius', 0.045)  
-        self.declare_parameter('robot_width', 0.13)  
-        self.declare_parameter('wheelbase', 0.065)  
-
+        self.declare_parameter('wheelbase', 0.10)    # L (m)
+        self.declare_parameter('track_width', 0.13)    # W (m)
         self.L = self.get_parameter('wheelbase').value
-        self.W = self.get_parameter('robot_width').value
+        self.W = self.get_parameter('track_width').value
+
+        # Maximum allowed steering angle (rad)
+        self.max_steer = 0.7854
 
         # Subscriber to cmd_vel
         self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
 
         # Publisher for wheel speeds
-        self.velocities_control_pub = self.create_publisher(Float64MultiArray, '/velocity_controllers/commands', 10)
-        self.steering_control_pub = self.create_publisher(Float64MultiArray, '/steering_position_controller/commands', 10)
+        self.velocities_control_pub = self.create_publisher(
+            Float64MultiArray, '/velocity_controllers/commands', 10)
+        self.steering_control_pub = self.create_publisher(
+            Float64MultiArray, '/steering_position_controller/commands', 10)
 
         self.get_logger().info("Inverse Kinematics Basic Model node has started.")
 
     def cmd_vel_callback(self, msg):
-        X = msg.linear.x  
-        omega = msg.angular.z  
+        X = msg.linear.x
+        omega = msg.angular.z
+        delta_cmd = msg.angular.z
 
-        # คำนวณรัศมีการเลี้ยว
-        if omega != 0:
-            R = X / omega  # รัศมีโค้ง
-            delta = atan(self.L / R)  # มุมเลี้ยว
-        else:
+        delta_cmd = max(min(delta_cmd, self.max_steer), -self.max_steer)
+
+        # คำนวณรัศมีการเลี้ยว R โดยใช้สมการ: R = L / tan(δ)
+        if abs(delta_cmd) < 1e-6:
             R = float('inf')
-            delta = 0.0
+            delta_left = 0.0
+            delta_right = 0.0
+        else:
+            R = self.L / tan(delta_cmd)
+            # คำนวณมุมเลี้ยวล้อหน้า (Ackermann geometry)
+            delta_left = delta_right = atan(self.L / R)
 
-        delta_left = delta
-        delta_right = delta
+        # จำกัดมุมเลี้ยวไม่ให้เกิน ±max_steer
+        delta_left = max(min(delta_left, self.max_steer), -self.max_steer)
+        delta_right = max(min(delta_right, self.max_steer), -self.max_steer)
 
-        # คำนวณความเร็วล้อ
-        if omega == 0:  
+        # คำนวณความเร็วล้อ (ถ้าวิ่งตรง ทุกล้อเท่ากัน)
+        if R == float('inf'):
             V_fl = V_fr = V_rl = V_rr = X
-        else:  
-            V_fl = X * (R + self.W / 2) / R
-            V_fr = X * (R - self.W / 2) / R
-            V_rl = X * (R + self.W / 2) / R
-            V_rr = X * (R - self.W / 2) / R
+        else:
+            V_fl = V_rl= X * (R - self.W / 2) / R
+            V_fr = V_rr = X * (R + self.W / 2) / R
+            # ในรถ Ackermann ล้อหลังมักใช้ความเร็วเฉลี่ย X
+            # V_rl = V_rr = X
 
         # ส่งค่าควบคุม
         velocity_control_msg = Float64MultiArray()
@@ -61,11 +70,12 @@ class InverseKinematics(Node):
         steering_angles_msg.data = [delta_left, delta_right]
         self.steering_control_pub.publish(steering_angles_msg)
 
-        self.get_logger().info(f"Steering Angles: Left={delta_left:.2f} rad, Right={delta_right:.2f} rad")
+        self.get_logger().info(f"Commanded δ: {delta_cmd:.3f} rad, R: {R if R != float('inf') else 'inf'}")
+        self.get_logger().info(f"Steering: Left={delta_left:.3f} rad, Right={delta_right:.3f} rad")
         self.get_logger().info(f"Wheel Speeds: FL={V_fl:.2f}, FR={V_fr:.2f}, RL={V_rl:.2f}, RR={V_rr:.2f}")
 
-
 def main(args=None):
+
     rclpy.init(args=args)
     node = InverseKinematics()
     rclpy.spin(node)
