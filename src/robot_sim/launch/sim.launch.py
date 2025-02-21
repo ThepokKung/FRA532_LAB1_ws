@@ -10,6 +10,13 @@ from launch.event_handlers import OnProcessExit
 import xacro
 
 def generate_launch_description():
+
+    # ROBOT param
+    spawn_x_val = '9.073500'
+    spawn_y_val = '0.0'
+    spawn_z_val = '3.0'
+    spawn_yaw_val = '1.57'
+
     robot_des_share = get_package_share_directory('robot_description')
     robot_con_share = get_package_share_directory('robot_controller')
     robot_sim_share = get_package_share_directory('robot_sim')
@@ -55,10 +62,15 @@ def generate_launch_description():
         arguments=[
             "-topic", "robot_description",
             "-entity", "fake_limo",
+            '-timeout', '120.0',
+                    '-x', spawn_x_val,
+                    '-y', spawn_y_val,
+                    '-z', spawn_z_val,
+                    '-Y', spawn_yaw_val
         ],
         output = "screen"
     )
-    
+
     # controller = Node(
     #     package="my_controller",
     #     executable="diff_drive.py"
