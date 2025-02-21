@@ -6,6 +6,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
 from math import atan, tan
 
+
 class InverseKinematics(Node):
     def __init__(self):
         super().__init__('inverse_kinematics_nscc_model')
@@ -15,16 +16,18 @@ class InverseKinematics(Node):
         self.declare_parameter('track_width', 0.13)    # W (m)
         self.L = self.get_parameter('wheelbase').value
         self.W = self.get_parameter('track_width').value
-        
+
         # Maximum allowed steering angle (rad)
-        self.max_steer = 0.7854 
+        self.max_steer = 0.7854
 
         # Subscriber รับ /cmd_vel
         self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
 
         # Publishers
-        self.vel_pub = self.create_publisher(Float64MultiArray, '/velocity_controllers/commands', 10)
-        self.steering_pub = self.create_publisher(Float64MultiArray, '/steering_position_controller/commands', 10)
+        self.vel_pub = self.create_publisher(
+            Float64MultiArray, '/velocity_controllers/commands', 10)
+        self.steering_pub = self.create_publisher(
+            Float64MultiArray, '/steering_position_controller/commands', 10)
 
         self.get_logger().info("Inverse Kinematics NSCC Model node has started.")
 
@@ -54,10 +57,10 @@ class InverseKinematics(Node):
         if R == float('inf'):
             V_fl = V_fr = V_rl = V_rr = X
         else:
-            V_fl = V_rl = X * (R - self.W / 2) / R
-            V_fr = V_rr= X * (R + self.W / 2) / R
+            V_fl = X * (R - self.W / 2) / R
+            V_fr = X * (R + self.W / 2) / R
             # ในรถ Ackermann ล้อหลังมักใช้ความเร็วเฉลี่ย X
-            # V_rl = V_rr = X
+            V_rl = V_rr = X
 
         # ส่งค่าควบคุมความเร็วล้อ
         vel_msg = Float64MultiArray()
@@ -69,9 +72,13 @@ class InverseKinematics(Node):
         steer_msg.data = [delta_left, delta_right]
         self.steering_pub.publish(steer_msg)
 
-        self.get_logger().info(f"Commanded δ: {delta_cmd:.3f} rad, R: {R if R != float('inf') else 'inf'}")
-        self.get_logger().info(f"Steering: Left={delta_left:.3f} rad, Right={delta_right:.3f} rad")
-        self.get_logger().info(f"Wheel Speeds: FL={V_fl:.2f}, FR={V_fr:.2f}, RL={V_rl:.2f}, RR={V_rr:.2f}")
+        self.get_logger().info(
+            f"Commanded δ: {delta_cmd:.3f} rad, R: {R if R != float('inf') else 'inf'}")
+        self.get_logger().info(
+            f"Steering: Left={delta_left:.3f} rad, Right={delta_right:.3f} rad")
+        self.get_logger().info(
+            f"Wheel Speeds: FL={V_fl:.2f}, FR={V_fr:.2f}, RL={V_rl:.2f}, RR={V_rr:.2f}")
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -79,6 +86,7 @@ def main(args=None):
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

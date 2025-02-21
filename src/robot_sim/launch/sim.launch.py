@@ -46,10 +46,10 @@ def generate_launch_description():
         output = "screen"
     )
     
-    controller = Node(
-        package="my_controller",
-        executable="diff_drive.py"
-    )
+    # controller = Node(
+    #     package="my_controller",
+    #     executable="diff_drive.py"
+    # )
     
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
@@ -114,6 +114,5 @@ def generate_launch_description():
     launch_description.add_action(rviz)
     launch_description.add_action(gazebo)
     launch_description.add_action(spawn_entity)
-    # launch_description.add_action(controller)
     launch_description.add_action(rsp)
     return launch_description
