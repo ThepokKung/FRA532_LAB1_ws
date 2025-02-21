@@ -12,7 +12,7 @@ import xacro
 def generate_launch_description():
     robot_des_share = get_package_share_directory('robot_description')
     robot_con_share = get_package_share_directory('robot_controller')
-    rsp_file = os.path.join(robot_des_share, 'launch', 'rst.launch.py')
+    rsp_file = os.path.join(robot_des_share, 'launch', 'rsp.launch.py')
     rviz_file = os.path.join(robot_con_share, 'rviz', 'displaysim.rviz')
 
     rsp = IncludeLaunchDescription(
