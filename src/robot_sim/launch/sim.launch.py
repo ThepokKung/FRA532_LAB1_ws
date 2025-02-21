@@ -63,12 +63,19 @@ def generate_launch_description():
             "-topic", "robot_description",
             "-entity", "fake_limo",
             '-timeout', '120.0',
-                    '-x', spawn_x_val,
-                    '-y', spawn_y_val,
-                    '-z', spawn_z_val,
-                    '-Y', spawn_yaw_val
+            '-x', spawn_x_val,
+            '-y', spawn_y_val,
+            '-z', spawn_z_val,
+            '-Y', spawn_yaw_val
         ],
-        output = "screen"
+        output="screen"
+    )
+
+    static_transform_publisher = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        arguments=["0", "0", "0", "0", "0", "0", "world", "base_link"],
+        output="screen"
     )
 
     # controller = Node(
@@ -140,4 +147,5 @@ def generate_launch_description():
     launch_description.add_action(gazebo)
     launch_description.add_action(spawn_entity)
     launch_description.add_action(rsp)
+    launch_description.add_action(static_transform_publisher)
     return launch_description

@@ -86,8 +86,8 @@
         <!-- front_left_steering_joint -->
         <joint name="front_left_steering_joint">
             <command_interface name="position">
-                <param name="min">-0.7854</param>
-                <param name="max">0.7854</param>
+                <param name="min">-0.523598767</param>
+                <param name="max">0.523598767</param>
             </command_interface>
             <state_interface name="position">
                 <param name="initial_value">0.0</param>
@@ -101,8 +101,8 @@
         <!-- front_right_steering_joint -->
         <joint name="front_right_steering_joint">
             <command_interface name="position">
-                <param name="min">-0.7854</param>
-                <param name="max">0.7854</param>
+                <param name="min">-0.523598767</param>
+                <param name="max">0.523598767</param>
             </command_interface>
             <state_interface name="position">
                 <param name="initial_value">0.0</param>
