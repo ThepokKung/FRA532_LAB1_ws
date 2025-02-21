@@ -29,7 +29,7 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}]
     )
 
-    rsp_file = os.path.join(pkg_share, 'launch', 'rst.launch.py')
+    rsp_file = os.path.join(pkg_share, 'launch', 'rsp.launch.py')
 
     rsp = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(

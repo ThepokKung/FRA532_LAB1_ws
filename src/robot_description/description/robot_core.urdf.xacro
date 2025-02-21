@@ -10,9 +10,13 @@
     <material name="black">
         <color rgba="0 0 0 1"/>
     </material>
-     <material name="blue">
+    <material name="blue">
         <color rgba="0 0 1 1"/>
     </material>
+    <material name="red">
+        <color rgba="1 0 0 1"/>
+    </material>
+
 
     <!-- base link -->
     <link name="base_link"/>
