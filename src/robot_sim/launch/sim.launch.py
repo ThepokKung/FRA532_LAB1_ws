@@ -14,14 +14,14 @@ def generate_launch_description():
     # ROBOT param
     spawn_x_val = '9.073500'
     spawn_y_val = '0.0'
-    spawn_z_val = '3.0'
+    spawn_z_val = '0.0'
     spawn_yaw_val = '1.57'
 
     robot_des_share = get_package_share_directory('robot_description')
     robot_con_share = get_package_share_directory('robot_controller')
     robot_sim_share = get_package_share_directory('robot_sim')
     rsp_file = os.path.join(robot_des_share, 'launch', 'rsp.launch.py')
-    rviz_file = os.path.join(robot_con_share, 'rviz', 'displaysim.rviz')
+    rviz_file = os.path.join(robot_con_share, 'rviz', 'displaysim2.rviz')
 
     rsp = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -74,7 +74,13 @@ def generate_launch_description():
     static_transform_publisher = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments=["0", "0", "0", "0", "0", "0", "world", "odom"],
+        arguments=[spawn_x_val, "0", "0", "1.57", "0", "0", "world", "odom"],
+        output="screen"
+    )
+
+    forward_kinematics = Node(
+        package="robot_controller",
+        executable="ForwardKinematic-All.py",
         output="screen"
     )
 
@@ -148,4 +154,5 @@ def generate_launch_description():
     launch_description.add_action(spawn_entity)
     launch_description.add_action(rsp)
     launch_description.add_action(static_transform_publisher)
+    launch_description.add_action(forward_kinematics)
     return launch_description

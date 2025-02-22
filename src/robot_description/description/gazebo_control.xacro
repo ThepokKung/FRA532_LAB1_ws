@@ -13,7 +13,7 @@
                 <remapping>odom:=pose</remapping>
             </ros>
             <body_name>base_link</body_name>
-            <frameName>world</frameName>
+            <frameName>odom</frameName>            <!-- เปลี่ยนจาก world เป็น odom -->
             <updateRate>100.0</updateRate>
         </plugin>
     </gazebo>

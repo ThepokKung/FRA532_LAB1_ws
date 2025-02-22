@@ -29,9 +29,10 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/InverKinematic-basic.py
   scripts/InverKinematic-nscc.py
-  scripts/ForwardKinematic-Double.py
-  scripts/ForwardKinematic-Single.py
-  scripts/ForwardKinematic-Yaw.py
+  # scripts/ForwardKinematic-Double.py
+  # scripts/ForwardKinematic-Single.py
+  # scripts/ForwardKinematic-Yaw.py
+  scripts/ForwardKinematic-All.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
