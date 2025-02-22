@@ -92,15 +92,6 @@ class JointStateForwardKinematicsAll(Node):
         self.prev_time = curr_time
         
         # ### 1. Yaw Rate Model (Differential Drive)
-        # # คำนวณความเร็วของล้อซ้ายและขวาโดยใช้ค่าเฉลี่ยของล้อหน้าและหลัง
-        # v_left = (v_fl + v_rl) / 2.0
-        # v_right = (v_fr + v_rr) / 2.0
-        # V_yaw = (v_left + v_right) / 2.0
-        # omega_yaw = (v_right - v_left) / self.W
-
-        # self.x_yaw += V_yaw * math.cos(self.theta_yaw) * dt
-        # self.y_yaw += V_yaw * math.sin(self.theta_yaw) * dt
-        # self.theta_yaw += omega_yaw * dt
         self.x_yaw += self.v_yaw * dt * math.cos(self.theta_yaw + ((self.omega_yaw * dt )/ 2.0))
         self.y_yaw += self.v_yaw * dt * math.sin(self.theta_yaw + ((self.omega_yaw * dt )/ 2.0))
         self.theta_yaw += self.omega_yaw * dt
@@ -111,13 +102,6 @@ class JointStateForwardKinematicsAll(Node):
         odom_yaw = self.create_odom_msg(self.x_yaw, self.y_yaw, self.theta_yaw, self.v_yaw, self.omega_yaw, msg.header.stamp)
 
         # ### 2. Single-Track (Bicycle) Model
-        # # ใช้ค่าเฉลี่ยของล้อทั้งหมดเป็นความเร็วเชิงเส้น และใช้ค่า steering delta ที่ได้
-        # V_single = (v_fl + v_fr + v_rl + v_rr) / 4.0
-        # # อัตราการหมุนจากแบบจักรยาน: ω = V/L * tan(δ)
-        # omega_single = V_single / self.L * math.tan(delta)
-        # self.x_single += V_single * math.cos(self.theta_single) * dt
-        # self.y_single += V_single * math.sin(self.theta_single) * dt
-        # self.theta_single += omega_single * dt
         self.x_single += self.v_single * dt * math.cos(self.theta_single + ((self.omega_single * dt )/ 2.0))
         self.y_single += self.v_single * dt * math.sin(self.theta_single + ((self.omega_single * dt )/ 2.0))
         self.theta_single += self.omega_single * dt
@@ -128,15 +112,6 @@ class JointStateForwardKinematicsAll(Node):
         odom_single = self.create_odom_msg(self.x_single, self.y_single, self.theta_single, self.v_single , self.omega_single , msg.header.stamp)
 
         ### 3. Double-Track Model
-        # แยกความเร็วของล้อหน้าและล้อหลัง
-        # front_speed = (v_fl + v_fr) / 2.0
-        # rear_speed = (v_rl + v_rr) / 2.0
-        # V_double = (front_speed + rear_speed) / 2.0
-        # # สมมติว่าอัตราการหมุนคำนวณจากความแตกต่างระหว่างล้อหน้ากับหลัง
-        # omega_double = (front_speed - rear_speed) / self.L
-        # self.x_double += V_double * math.cos(self.theta_double) * dt
-        # self.y_double += V_double * math.sin(self.theta_double) * dt
-        # self.theta_double += omega_double * dt
         d_rr = math.atan(10.0 / 6.5)
         d_rl = 180 - d_rr
         dr = math.sqrt(10.0**2 + 6.5**2)
