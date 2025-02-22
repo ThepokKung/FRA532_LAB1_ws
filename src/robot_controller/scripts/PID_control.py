@@ -57,7 +57,7 @@ class PIDPathTracking(Node):
         self.lookahead_threshold = self.get_parameter('lookahead_threshold').value
 
         # Constant linear velocity (m/s)
-        self.declare_parameter('linear_velocity', 10.0)
+        self.declare_parameter('linear_velocity', 20.0)
         self.linear_velocity = self.get_parameter('linear_velocity').value
 
         # PID state variables
@@ -68,9 +68,8 @@ class PIDPathTracking(Node):
         # Current target index in the path
         self.current_target_index = 0
 
-        # Subscribe to ground truth odometry (nav_msgs/Odometry)
+        
         self.create_subscription(Odometry, '/ground_truth/pose', self.odom_callback, 10)
-        # Publisher for command velocity; publish directly to /cmd_vel
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
 
         self.get_logger().info("🚀 PID Path Tracking Node Initialized")
@@ -92,6 +91,10 @@ class PIDPathTracking(Node):
             return
 
         # Choose the current target waypoint
+        if self.current_target_index >= len(self.path):
+            self.get_logger().info("🏁 No more waypoints. Stopping robot.")
+            self.publish_stop()
+            return
         target_wp = self.path[self.current_target_index]
         tx = target_wp['x']
         ty = target_wp['y']
