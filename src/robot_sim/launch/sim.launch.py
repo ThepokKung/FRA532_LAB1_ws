@@ -78,11 +78,11 @@ def generate_launch_description():
         output="screen"
     )
 
-    # forward_kinematics = Node(
-    #     package="robot_controller",
-    #     executable="ForwardKinematic-All.py",
-    #     output="screen"
-    # )
+    forward_kinematics = Node(
+        package="robot_controller",
+        executable="ForwardKinematic-All.py",
+        output="screen"
+    )
 
     # controller = Node(
     #     package="my_controller",
@@ -154,5 +154,5 @@ def generate_launch_description():
     launch_description.add_action(spawn_entity)
     launch_description.add_action(rsp)
     launch_description.add_action(static_transform_publisher)
-    # launch_description.add_action(forward_kinematics)
+    launch_description.add_action(forward_kinematics)
     return launch_description

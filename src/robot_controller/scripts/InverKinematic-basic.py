@@ -12,7 +12,7 @@ class InverseKinematics(Node):
         super().__init__('inverse_kinematics_basic_model')
 
         # Load robot parameters
-        self.declare_parameter('wheelbase', 0.10)    # L (m)
+        self.declare_parameter('wheelbase', 0.20)    # L (m)
         self.declare_parameter('track_width', 0.13)    # W (m)
         self.L = self.get_parameter('wheelbase').value
         self.W = self.get_parameter('track_width').value

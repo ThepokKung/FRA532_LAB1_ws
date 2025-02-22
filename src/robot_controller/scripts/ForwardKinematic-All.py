@@ -1,4 +1,16 @@
 #!/usr/bin/python3
+"""
+JointStateForwardKinematicsAll - Forward Kinematics from JointState using 3 Models:
+1. Yaw Rate Model (Differential Drive)
+2. Single-Track (Bicycle) Model
+3. Double-Track Model
+
+หมายเหตุ:
+- ข้อมูลเข้ามาจาก topic /joint_states ซึ่งมีข้อมูลของ wheel velocities และ steering joint positions
+- ค่าพารามิเตอร์ (wheel_radius, wheelbase, track_width) ควรตรวจสอบให้ตรงกับรถของคุณ
+- ในโมเดล Double-Track, ค่าคงที่ 10.0 และ 6.5 ถูกใช้เป็นตัวอย่างจาก Paper; หากมีข้อมูลจริงให้ปรับเปลี่ยนให้ถูกต้อง
+"""
+
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
@@ -14,14 +26,14 @@ class JointStateForwardKinematicsAll(Node):
 
         # พารามิเตอร์ของหุ่นยนต์
         self.declare_parameter('wheel_radius', 0.045)    # m
-        self.declare_parameter('wheelbase', 0.10)          # m (ระยะห่างระหว่างล้อหน้า-หลัง)
-        self.declare_parameter('track_width', 0.13)          # m (ระยะห่างระหว่างล้อซ้าย-ขวา)
+        self.declare_parameter('wheelbase', 0.20)          # m (ระยะห่างล้อหน้า-หลัง)
+        self.declare_parameter('track_width', 0.13)          # m (ระยะห่างล้อซ้าย-ขวา)
 
         self.wheel_radius = self.get_parameter('wheel_radius').value
         self.L = self.get_parameter('wheelbase').value
         self.W = self.get_parameter('track_width').value
 
-        # สถานะเริ่มต้นของ odometry
+        # สถานะเริ่มต้นของ odometry สำหรับแต่ละโมเดล
         self.x_yaw = 0.0
         self.y_yaw = 0.0
         self.theta_yaw = 0.0
@@ -39,7 +51,6 @@ class JointStateForwardKinematicsAll(Node):
         self.theta_double = 0.0
         self.v_double = 0.0
         self.omega_double = 0.0
-        
 
         self.prev_time = None
 
@@ -60,7 +71,7 @@ class JointStateForwardKinematicsAll(Node):
         # สร้าง dictionary สำหรับเข้าถึงข้อมูลได้ง่าย
         joints = {name: {'position': pos, 'velocity': vel} for name, pos, vel in zip(msg.name, msg.position, msg.velocity)}
 
-        # ตรวจสอบข้อมูลที่จำเป็น (ชื่อของ joints ควรตรงกับใน URDF ของคุณ)
+        # ตรวจสอบข้อมูลที่จำเป็น
         required = [
             "front_left_wheel", "front_right_wheel",
             "back_left_wheel", "back_right_wheel",
@@ -78,9 +89,9 @@ class JointStateForwardKinematicsAll(Node):
         v_rr = joints["back_right_wheel"]['velocity'] * self.wheel_radius
 
         # รับค่า steering (มุมเลี้ยว) จาก steering joints (rad)
-        # สมมติใช้ค่าเฉลี่ยของล้อหน้า
         delta_left = joints["front_left_steering_joint"]['position']
         delta_right = joints["front_right_steering_joint"]['position']
+        # ใน Paper, ค่า steering ถูกนิยามจากค่าเฉลี่ยของล้อหน้า
         delta = (delta_left + delta_right) / 2.0
 
         # คำนวณเวลาที่ผ่านมา
@@ -90,47 +101,71 @@ class JointStateForwardKinematicsAll(Node):
         else:
             dt = curr_time - self.prev_time
         self.prev_time = curr_time
-        
-        # ### 1. Yaw Rate Model (Differential Drive)
-        self.x_yaw += self.v_yaw * dt * math.cos(self.theta_yaw + ((self.omega_yaw * dt )/ 2.0))
-        self.y_yaw += self.v_yaw * dt * math.sin(self.theta_yaw + ((self.omega_yaw * dt )/ 2.0))
-        self.theta_yaw += self.omega_yaw * dt
-        self.v_yaw = (v_rl + v_rr) / 2.0
 
-        self.omega_yaw = (v_rr - v_rl) / self.W
+        # ======= 1. Yaw Rate Model =======
+        # ใช้ล้อหลังในการคำนวณ (Differential Drive)
+        # คำนวณความเร็วเชิงเส้นและอัตราการหมุน
+        v_left_yaw = v_rl   # ใช้ล้อหลังซ้าย 
+        v_right_yaw = v_rr  # ใช้ล้อหลังขวา
+        V_yaw = (v_left_yaw + v_right_yaw) / 2.0
+        omega_yaw = (v_right_yaw - v_left_yaw) / self.W
 
-        odom_yaw = self.create_odom_msg(self.x_yaw, self.y_yaw, self.theta_yaw, self.v_yaw, self.omega_yaw, msg.header.stamp)
+        # อัปเดต state โดยใช้ mid-point integration
+        self.x_yaw += V_yaw * dt * math.cos(self.theta_yaw + (omega_yaw * dt / 2.0))
+        self.y_yaw += V_yaw * dt * math.sin(self.theta_yaw + (omega_yaw * dt / 2.0))
+        self.theta_yaw += omega_yaw * dt
 
-        # ### 2. Single-Track (Bicycle) Model
-        self.x_single += self.v_single * dt * math.cos(self.theta_single + ((self.omega_single * dt )/ 2.0))
-        self.y_single += self.v_single * dt * math.sin(self.theta_single + ((self.omega_single * dt )/ 2.0))
-        self.theta_single += self.omega_single * dt
-    
-        self.omega_single = self.v_single / self.L * math.tan(delta)
-        self.v_single = (v_rl + v_rr) / 2.0
+        self.v_yaw = V_yaw
+        self.omega_yaw = omega_yaw
 
-        odom_single = self.create_odom_msg(self.x_single, self.y_single, self.theta_single, self.v_single , self.omega_single , msg.header.stamp)
+        odom_yaw = self.create_odom_msg(self.x_yaw, self.y_yaw, self.theta_yaw, V_yaw, omega_yaw, msg.header.stamp)
 
-        ### 3. Double-Track Model
-        d_rr = math.atan(10.0 / 6.5)
-        d_rl = 180 - d_rr
-        dr = math.sqrt(10.0**2 + 6.5**2)
+        # ======= 2. Single-Track (Bicycle) Model =======
+        # ใช้ค่าเฉลี่ยของล้อหลังเป็นความเร็วเชิงเส้น
+        V_single = (v_rl + v_rr) / 2.0
+        # คำนวณอัตราการหมุนจาก Bicycle Model: ω = V/L * tan(δ)
+        omega_single = V_single / self.L * math.tan(delta)
+        # อัปเดต state
+        self.x_single += V_single * dt * math.cos(self.theta_single + (omega_single * dt / 2.0))
+        self.y_single += V_single * dt * math.sin(self.theta_single + (omega_single * dt / 2.0))
+        self.theta_single += omega_single * dt
 
-        self.x_double += self.v_double * dt * math.cos(self.theta_double + ((self.omega_double * dt )/ 2.0))
-        self.y_double += self.v_double * dt * math.sin(self.theta_double + ((self.omega_double * dt )/ 2.0))
-        self.theta_double += self.omega_double * dt
-        self.v_double = (v_rl + v_rr) / 2.0
+        self.v_single = V_single
+        self.omega_single = omega_single
 
-        self.omega_double = (v_rr - v_rl) / ((self.y_double - (dr * math.sin(d_rr + self.theta_double))) - (self.y_double - (dr * math.sin(d_rl + self.theta_double))))
+        odom_single = self.create_odom_msg(self.x_single, self.y_single, self.theta_single, V_single, omega_single, msg.header.stamp)
 
-        odom_double = self.create_odom_msg(self.x_double, self.y_double, self.theta_double, self.v_double , self.omega_double, msg.header.stamp)
+        # ======= 3. Double-Track Model =======
+        d_rr = math.atan(0.20 / 0.13)    # มุมที่คำนวณจากล้อขวา (ตัวอย่าง)
+        d_rl = math.pi - d_rr           # มุมของล้อซ้าย (แก้ไขจาก 180 - d_rr)
+        dr = math.sqrt(0.20**2 + 0.13**2)  # ระยะห่างระหว่าง contact points (ตัวอย่าง)
+        # การคำนวณความเร็วเชิงเส้นสำหรับ Double-Track Model ใช้ล้อหลังเฉพาะ
+        V_double = (v_rl + v_rr) / 2.0
+
+        # คำนวณอัตราการหมุนแบบ Double-Track:
+        # ω = (v_rr - v_rl) / (dr * [ sin(d_rl + θ) - sin(d_rr + θ) ])
+        denom = dr * (math.sin(d_rl + self.theta_double) - math.sin(d_rr + self.theta_double))
+        if abs(denom) < 1e-6:
+            omega_double = 0.0
+        else:
+            omega_double = (v_rr - v_rl) / denom
+
+        # อัปเดต state สำหรับ Double-Track Model
+        self.x_double += V_double * dt * math.cos(self.theta_double + (omega_double * dt / 2.0))
+        self.y_double += V_double * dt * math.sin(self.theta_double + (omega_double * dt / 2.0))
+        self.theta_double += omega_double * dt
+
+        self.v_double = V_double
+        self.omega_double = omega_double
+
+        odom_double = self.create_odom_msg(self.x_double, self.y_double, self.theta_double, V_double, omega_double, msg.header.stamp)
 
         # Publish Odometry messages
         self.odom_pub_yaw.publish(odom_yaw)
         self.odom_pub_single.publish(odom_single)
         self.odom_pub_double.publish(odom_double)
 
-        # Broadcast the transform
+        # Broadcast the transform (ใช้ state ของ Yaw Rate Model เป็นตัวแทน)
         self.broadcast_transform(self.x_yaw, self.y_yaw, self.theta_yaw, msg.header.stamp)
 
     def create_odom_msg(self, x, y, theta, V, omega, stamp):
