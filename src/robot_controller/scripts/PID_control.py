@@ -16,7 +16,7 @@ PID Path Tracking Controller for Ackermann Steering Mobile Robot
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseStamped, Twist
+from geometry_msgs.msg import Twist
 import yaml
 import math
 import os
@@ -95,9 +95,11 @@ class PIDPathTracking(Node):
             self.get_logger().info("🏁 No more waypoints. Stopping robot.")
             self.publish_stop()
             return
+        
         target_wp = self.path[self.current_target_index]
         tx = target_wp['x']
         ty = target_wp['y']
+        
         desired_heading = math.atan2(ty - cy, tx - cx)
         heading_error = normalize_angle(desired_heading - current_yaw)
         distance_error = math.hypot(tx - cx, ty - cy)

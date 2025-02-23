@@ -1,16 +1,11 @@
 #!/usr/bin/python3
 """
-path_tracking_pid_continuous_odom.py
+pure_pursuit_controller_direct_angle.py
 
-PID Path Tracking Controller for Ackermann Steering Mobile Robot
-
-- โหลด path จากไฟล์ YAML ที่อยู่ใน package (เช่น 'robot_controller/config/path.yaml')
-- Subscribe to ground truth odometry from /ground_truth/odom (nav_msgs/msg/Odometry)
-- คำนวณ error (เช่น heading error, cross-track error) ระหว่างตำแหน่งปัจจุบันกับ target waypoint
-- ใช้ PID Controller คำนวณคำสั่ง steering (angular velocity) 
-- เมื่อใกล้ถึง waypoint เป้าหมายแล้วเลื่อน target ไปเรื่อยๆ จนครบ path
-- ส่ง cmd_vel_out (geometry_msgs/msg/Twist) ออกไป
-- Logging ทุกขั้นตอนเพื่อ debug
+Pure Pursuit Controller for Ackermann Steering Mobile Robot.
+This version outputs the desired front wheel steering angle (δ) directly
+via cmd_vel.angular.z, assuming the downstream Inverse Kinematics node
+interprets angular.z as the steering angle.
 """
 
 import rclpy
@@ -23,137 +18,124 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 def normalize_angle(angle):
-    """Normalize an angle to [-pi, pi]."""
     return math.atan2(math.sin(angle), math.cos(angle))
 
-class PIDPathTracking(Node):
+class PurePursuitController(Node):
     def __init__(self):
-        super().__init__('pid_path_tracking')
-        # Load path from YAML file in package
+        super().__init__('pure_pursuit_controller')
+        
+        # Load path from YAML file
         path_file = os.path.join(
             get_package_share_directory('robot_controller'),
             'config',
             'path.yaml'
         )
-        if os.path.exists(path_file):
+        try:
             with open(path_file, 'r') as f:
                 self.path = yaml.safe_load(f)
-            self.get_logger().info(f"✅ Loaded path with {len(self.path)} waypoints from {path_file}")
-        else:
-            self.get_logger().error("❌ Path file not found: " + path_file)
+            self.get_logger().info(f"✅ Loaded path with {len(self.path)} waypoints")
+        except Exception as e:
+            self.get_logger().error(f"❌ Failed to load path: {e}")
             self.path = []
+        
+        # Pure Pursuit parameters
+        self.declare_parameter('K_dd', 1.0)         # Lookahead gain
+        self.declare_parameter('l_min', 0.5)          # Minimum lookahead distance (m)
+        self.declare_parameter('l_max', 3.0)          # Maximum lookahead distance (m)
+        self.K_dd = self.get_parameter('K_dd').value
+        self.l_min = self.get_parameter('l_min').value
+        self.l_max = self.get_parameter('l_max').value
+        
+        # Vehicle parameter: wheelbase L (m)
+        self.declare_parameter('wheelbase', 0.20)
+        self.L = self.get_parameter('wheelbase').value
 
-        # PID parameters (tunable)
-        self.declare_parameter('Kp', 1.0)
-        self.declare_parameter('Ki', 0.0)
-        self.declare_parameter('Kd', 0.1)
-        self.Kp = self.get_parameter('Kp').value
-        self.Ki = self.get_parameter('Ki').value
-        self.Kd = self.get_parameter('Kd').value
-
-        # Lookahead threshold: distance to consider waypoint reached
-        self.declare_parameter('lookahead_threshold', 0.5)
-        self.lookahead_threshold = self.get_parameter('lookahead_threshold').value
-
-        # Constant linear velocity (m/s)
-        self.declare_parameter('linear_velocity', 0.5)
+        # Control parameters
+        self.declare_parameter('linear_velocity', 20.0)  # m/s
         self.linear_velocity = self.get_parameter('linear_velocity').value
-
-        # PID state variables
-        self.integral_error = 0.0
-        self.prev_error = 0.0
-        self.prev_time = None
-
-        # Current target waypoint index
+        
+        # Threshold for waypoint reaching
+        self.declare_parameter('waypoint_threshold', 0.5)  # m
+        self.waypoint_threshold = self.get_parameter('waypoint_threshold').value
+        
+        # Current target index
         self.current_target_index = 0
-
-        # Subscribe to ground truth odometry (nav_msgs/Odometry)
-        self.create_subscription(Odometry, '/ground_truth/odom', self.odom_callback, 10)
-        # Publisher for command velocity
-        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel_out', 10)
-
-        self.get_logger().info("🚀 PID Path Tracking Node Initialized")
-        self.get_logger().info(f"🔹 Kp={self.Kp}, Ki={self.Ki}, Kd={self.Kd}")
-        self.get_logger().info(f"🔹 Lookahead Threshold = {self.lookahead_threshold} m")
-        self.get_logger().info(f"🔹 Linear Velocity = {self.linear_velocity} m/s")
-
+        
+        # Subscriber for current pose (Odometry) from ground truth or state estimator
+        self.create_subscription(Odometry, '/ground_truth/pose', self.odom_callback, 10)
+        # Publisher for cmd_vel command
+        self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        
+        self.prev_time = None
+        
+        self.get_logger().info("🚀 Pure Pursuit Controller Node Initialized (Direct Angle Mode)")
+        self.get_logger().info(f"🔹 Lookahead: K_dd={self.K_dd}, l_min={self.l_min}, l_max={self.l_max}")
+        self.get_logger().info(f"🔹 Wheelbase: {self.L} m, Linear Velocity: {self.linear_velocity} m/s")
+    
     def odom_callback(self, msg: Odometry):
-        # Extract current pose from Odometry message
         cx = msg.pose.pose.position.x
         cy = msg.pose.pose.position.y
         q = msg.pose.pose.orientation
         current_yaw = math.atan2(2*(q.w*q.z + q.x*q.y), 1 - 2*(q.y*q.y + q.z*q.z))
-
-        self.get_logger().info(f"📍 Current Pose: x={cx:.3f}, y={cy:.3f}, yaw={math.degrees(current_yaw):.2f}°")
-
-        # If no path loaded, do nothing
-        if not self.path:
+        v = msg.twist.twist.linear.x
+        
+        # Dynamic lookahead distance: l_d = clip(K_dd * v, l_min, l_max)
+        l_d = max(min(self.K_dd * v, self.l_max), self.l_min)
+        
+        # Get current target waypoint
+        if self.current_target_index >= len(self.path):
+            self.get_logger().info("🏁 Final waypoint reached. Stopping.")
+            self.publish_stop()
             return
-
-        # Choose target waypoint from path (continuous following)
         target_wp = self.path[self.current_target_index]
         tx = target_wp['x']
         ty = target_wp['y']
-        # For desired heading, compute angle from current pos to target waypoint
-        desired_heading = math.atan2(ty - cy, tx - cx)
-        heading_error = normalize_angle(desired_heading - current_yaw)
+        
         distance_error = math.hypot(tx - cx, ty - cy)
-
-        self.get_logger().info(f"🎯 Target Waypoint [{self.current_target_index}]: x={tx:.3f}, y={ty:.3f}")
-        self.get_logger().info(f"   Distance Error: {distance_error:.3f} m, Heading Error: {math.degrees(heading_error):.2f}°")
-
-        # Check if waypoint reached (within threshold)
-        if distance_error < self.lookahead_threshold:
-            self.get_logger().info(f"✅ Reached waypoint {self.current_target_index}: distance error = {distance_error:.3f} m")
+        if distance_error < self.waypoint_threshold:
+            self.get_logger().info(f"✅ Reached waypoint {self.current_target_index} (error={distance_error:.2f} m)")
             self.current_target_index += 1
             if self.current_target_index >= len(self.path):
-                self.get_logger().info("🏁 Reached final waypoint. Stopping robot.")
+                self.get_logger().info("🏁 Final waypoint reached. Stopping.")
                 self.publish_stop()
                 return
-            # Update target after reaching current waypoint
             target_wp = self.path[self.current_target_index]
             tx = target_wp['x']
             ty = target_wp['y']
-            desired_heading = math.atan2(ty - cy, tx - cx)
-            heading_error = normalize_angle(desired_heading - current_yaw)
-
-        # Compute time step
-        curr_time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
-        if self.prev_time is None:
-            dt = 0.01
-        else:
-            dt = curr_time - self.prev_time
-        self.prev_time = curr_time
-
-        # PID Controller for steering
-        self.integral_error += heading_error * dt
-        derivative = (heading_error - self.prev_error) / dt if dt > 0 else 0.0
-        self.prev_error = heading_error
-        steering_cmd = self.Kp * heading_error + self.Ki * self.integral_error + self.Kd * derivative
-
-        self.get_logger().info(f"🔄 PID: heading_err={math.degrees(heading_error):.2f}°, integral={self.integral_error:.3f}, derivative={math.degrees(derivative):.2f}°, steer_cmd={math.degrees(steering_cmd):.2f}°")
-
-        # Create and publish cmd_vel message
+        
+        desired_heading = math.atan2(ty - cy, tx - cx)
+        alpha = normalize_angle(desired_heading - current_yaw)
+        
+        # Compute desired steering angle δ using Pure Pursuit formula:
+        # δ = arctan((2 * L * sin(α)) / l_d)
+        delta = math.atan((2 * self.L * math.sin(alpha)) / l_d)
+        
+        # Log debug info
+        self.get_logger().info(f"📍 Pose: x={cx:.2f}, y={cy:.2f}, yaw={math.degrees(current_yaw):.1f}°")
+        self.get_logger().info(f"🎯 Target[{self.current_target_index}]: x={tx:.2f}, y={ty:.2f}, Dist Err: {distance_error:.2f} m")
+        self.get_logger().info(f"   Desired Heading: {math.degrees(desired_heading):.1f}°, α: {math.degrees(alpha):.1f}°")
+        self.get_logger().info(f"   Lookahead: {l_d:.2f} m, Steering δ: {math.degrees(delta):.1f}°")
+        
+        # In this mode, we use the computed steering angle δ directly
+        # Set cmd_vel.angular.z to δ (steering angle) instead of angular velocity.
         cmd = Twist()
         cmd.linear.x = self.linear_velocity
-        cmd.angular.z = steering_cmd
+        cmd.angular.z = delta  # Directly use δ as steering command
         self.cmd_pub.publish(cmd)
-
-        self.get_logger().info(f"🚗 Publishing cmd_vel: linear.x={cmd.linear.x:.2f} m/s, angular.z={math.degrees(cmd.angular.z):.2f}°/s")
-
+    
     def publish_stop(self):
         cmd = Twist()
         cmd.linear.x = 0.0
         cmd.angular.z = 0.0
         self.cmd_pub.publish(cmd)
         self.get_logger().info("🛑 Robot Stopped.")
-
+        
 def main(args=None):
     rclpy.init(args=args)
-    node = PIDPathTracking()
+    node = PurePursuitController()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
-
+    
 if __name__ == '__main__':
     main()
