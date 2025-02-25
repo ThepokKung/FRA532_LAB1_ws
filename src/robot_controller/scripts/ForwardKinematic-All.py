@@ -15,10 +15,9 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from nav_msgs.msg import Odometry
-from tf_transformations import quaternion_from_euler
 import math
 import tf2_ros
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, Quaternion
 
 class JointStateForwardKinematicsAll(Node):
     def __init__(self):
@@ -83,8 +82,7 @@ class JointStateForwardKinematicsAll(Node):
                 return
 
         # คำนวณความเร็วของล้อ (m/s) จาก wheel joint velocities
-        v_fl = joints["front_left_wheel"]['velocity'] * self.wheel_radius
-        v_fr = joints["front_right_wheel"]['velocity'] * self.wheel_radius
+        # v_fl and v_fr are not used, so they are removed
         v_rl = joints["back_left_wheel"]['velocity'] * self.wheel_radius
         v_rr = joints["back_right_wheel"]['velocity'] * self.wheel_radius
 
@@ -178,7 +176,7 @@ class JointStateForwardKinematicsAll(Node):
         odom.pose.pose.position.x = x
         odom.pose.pose.position.y = y
         odom.pose.pose.position.z = 0.0
-        q = quaternion_from_euler(0, 0, theta)
+        q = self.quaternion_from_euler(0, 0, theta)
         odom.pose.pose.orientation = Quaternion(x=q[0], y=q[1], z=q[2], w=q[3])
         odom.twist.twist.linear.x = V
         odom.twist.twist.angular.z = omega
@@ -192,12 +190,22 @@ class JointStateForwardKinematicsAll(Node):
         t.transform.translation.x = x
         t.transform.translation.y = y
         t.transform.translation.z = 0.0
-        q = quaternion_from_euler(0, 0, theta)
+        q = self.quaternion_from_euler(0, 0, theta)
         t.transform.rotation.x = q[0]
         t.transform.rotation.y = q[1]
         t.transform.rotation.z = q[2]
         t.transform.rotation.w = q[3]
         self.tf_broadcaster.sendTransform(t)
+
+    def quaternion_from_euler(self, roll, pitch, yaw):
+        """
+        Convert an Euler angle to a quaternion.
+        """
+        qx = math.sin(roll/2) * math.cos(pitch/2) * math.cos(yaw/2) - math.cos(roll/2) * math.sin(pitch/2) * math.sin(yaw/2)
+        qy = math.cos(roll/2) * math.sin(pitch/2) * math.cos(yaw/2) + math.sin(roll/2) * math.cos(pitch/2) * math.sin(yaw/2)
+        qz = math.cos(roll/2) * math.cos(pitch/2) * math.sin(yaw/2) - math.sin(roll/2) * math.sin(pitch/2) * math.cos(yaw/2)
+        qw = math.cos(roll/2) * math.cos(pitch/2) * math.cos(yaw/2) + math.sin(roll/2) * math.sin(pitch/2) * math.sin(yaw/2)
+        return [qx, qy, qz, qw]
 
 def main(args=None):
     rclpy.init(args=args)
