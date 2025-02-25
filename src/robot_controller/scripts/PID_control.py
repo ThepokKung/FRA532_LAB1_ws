@@ -45,7 +45,7 @@ class PIDPathTracking(Node):
             self.path = []
 
         # PID gains (tunable)
-        self.declare_parameter('Kp', 1.0)
+        self.declare_parameter('Kp', 20.0)
         self.declare_parameter('Ki', 0.0)
         self.declare_parameter('Kd', 0.1)
         self.Kp = self.get_parameter('Kp').value
@@ -68,7 +68,6 @@ class PIDPathTracking(Node):
         # Current target index in the path
         self.current_target_index = 0
 
-        
         self.create_subscription(Odometry, '/ground_truth/pose', self.odom_callback, 10)
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
 
@@ -133,14 +132,14 @@ class PIDPathTracking(Node):
         self.integral_error += heading_error * dt
         derivative = (heading_error - self.prev_error) / dt if dt > 0 else 0.0
         self.prev_error = heading_error
-        steering_cmd = self.Kp * heading_error + self.Ki * self.integral_error + self.Kd * derivative
+        angular_velocity_cmd = self.Kp * heading_error + self.Ki * self.integral_error + self.Kd * derivative
 
-        self.get_logger().info(f"🔄 PID: heading_err={math.degrees(heading_error):.2f}°, integral={self.integral_error:.3f}, derivative={math.degrees(derivative):.2f}°, steer_cmd={math.degrees(steering_cmd):.2f}°")
+        self.get_logger().info(f"🔄 PID: heading_err={math.degrees(heading_error):.2f}°, integral={self.integral_error:.3f}, derivative={math.degrees(derivative):.2f}°, angular_velocity_cmd={math.degrees(angular_velocity_cmd):.2f}°/s")
 
         # Create and publish cmd_vel message
         cmd = Twist()
         cmd.linear.x = self.linear_velocity
-        cmd.angular.z = steering_cmd
+        cmd.angular.z = angular_velocity_cmd
         self.cmd_pub.publish(cmd)
         self.get_logger().info(f"🚗 Publishing cmd_vel: linear.x={cmd.linear.x:.2f} m/s, angular.z={math.degrees(cmd.angular.z):.2f}°/s")
 

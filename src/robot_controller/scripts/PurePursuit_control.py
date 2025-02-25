@@ -55,7 +55,7 @@ class PurePursuitController(Node):
         self.linear_velocity = self.get_parameter('linear_velocity').value
         
         # Threshold for waypoint reaching
-        self.declare_parameter('waypoint_threshold', 0.5)  # m
+        self.declare_parameter('waypoint_threshold', 1.0)  # m
         self.waypoint_threshold = self.get_parameter('waypoint_threshold').value
         
         # Current target index
@@ -110,17 +110,19 @@ class PurePursuitController(Node):
         # δ = arctan((2 * L * sin(α)) / l_d)
         delta = math.atan((2 * self.L * math.sin(alpha)) / l_d)
         
+        # Convert steering angle δ to angular velocity ω
+        angular_velocity_cmd = delta * self.linear_velocity / self.L
+        
         # Log debug info
         self.get_logger().info(f"📍 Pose: x={cx:.2f}, y={cy:.2f}, yaw={math.degrees(current_yaw):.1f}°")
         self.get_logger().info(f"🎯 Target[{self.current_target_index}]: x={tx:.2f}, y={ty:.2f}, Dist Err: {distance_error:.2f} m")
         self.get_logger().info(f"   Desired Heading: {math.degrees(desired_heading):.1f}°, α: {math.degrees(alpha):.1f}°")
-        self.get_logger().info(f"   Lookahead: {l_d:.2f} m, Steering δ: {math.degrees(delta):.1f}°")
+        self.get_logger().info(f"   Lookahead: {l_d:.2f} m, Steering δ: {math.degrees(delta):.1f}°, Angular Velocity ω: {math.degrees(angular_velocity_cmd):.1f}°/s")
         
-        # In this mode, we use the computed steering angle δ directly
-        # Set cmd_vel.angular.z to δ (steering angle) instead of angular velocity.
+        # Create and publish cmd_vel message
         cmd = Twist()
         cmd.linear.x = self.linear_velocity
-        cmd.angular.z = delta  # Directly use δ as steering command
+        cmd.angular.z = angular_velocity_cmd
         self.cmd_pub.publish(cmd)
     
     def publish_stop(self):
