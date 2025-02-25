@@ -61,7 +61,7 @@ class MPCController(Node):
         self.L = self.get_parameter('wheelbase').value
 
         # Control parameters
-        self.declare_parameter('linear_velocity', 10.0)  # m/s
+        self.declare_parameter('linear_velocity', 5.0)  # m/s
         self.linear_velocity = self.get_parameter('linear_velocity').value
 
         # Threshold for waypoint reaching
@@ -122,7 +122,7 @@ class MPCController(Node):
         u = self.solve_mpc(cx, cy, current_yaw, v, tx, ty, heading_error)
 
         # Convert steering angle to angular velocity
-        angular_velocity = self.linear_velocity * math.tan(u[1]) / self.L
+        angular_velocity = u[0] * math.tan(u[1]) / self.L
 
         # Log debug info
         self.get_logger().info(
