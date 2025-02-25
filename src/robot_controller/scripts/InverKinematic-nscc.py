@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
-from math import atan, tan
+from math import atan, tan, isclose
 
 
 class InverseKinematics(Node):
@@ -33,18 +33,15 @@ class InverseKinematics(Node):
 
     def cmd_vel_callback(self, msg):
         X = msg.linear.x     # ความเร็วเชิงเส้น (m/s)
-        # Interpret msg.angular.z as a steering command (δ) directly
-        delta_cmd = msg.angular.z
-        # Clamp the commanded steering angle to a maximum value
-        delta_cmd = max(min(delta_cmd, self.max_steer), -self.max_steer)
+        omega = msg.angular.z  # ความเร็วเชิงมุม (rad/s)
 
-        # คำนวณรัศมีการเลี้ยว R โดยใช้สมการ: R = L / tan(δ)
-        if abs(delta_cmd) < 1e-6:
+        # คำนวณรัศมีการเลี้ยว R โดยใช้สมการ: R = X / ω
+        if isclose(omega, 0.0, abs_tol=1e-6):
             R = float('inf')
             delta_left = 0.0
             delta_right = 0.0
         else:
-            R = self.L / tan(delta_cmd)
+            R = X / omega
             # คำนวณมุมเลี้ยวล้อหน้า (Ackermann geometry)
             delta_left = atan(self.L / (R - self.W / 2))
             delta_right = atan(self.L / (R + self.W / 2))
@@ -73,7 +70,7 @@ class InverseKinematics(Node):
         self.steering_pub.publish(steer_msg)
 
         self.get_logger().info(
-            f"Commanded δ: {delta_cmd:.3f} rad, R: {R if R != float('inf') else 'inf'}")
+            f"Commanded ω: {omega:.3f} rad/s, R: {R if R != float('inf') else 'inf'}")
         self.get_logger().info(
             f"Steering: Left={delta_left:.3f} rad, Right={delta_right:.3f} rad")
         self.get_logger().info(

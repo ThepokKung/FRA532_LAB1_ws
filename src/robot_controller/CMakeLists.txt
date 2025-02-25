@@ -52,7 +52,7 @@ install(TARGETS
 
 ################ INSTALL LAUNCH, ETC #################
 install(DIRECTORY
-  # config
+  config
   # launch
   rviz
   DESTINATION share/${PROJECT_NAME})
