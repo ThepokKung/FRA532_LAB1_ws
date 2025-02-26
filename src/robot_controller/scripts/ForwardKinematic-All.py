@@ -17,7 +17,8 @@ from sensor_msgs.msg import JointState
 from nav_msgs.msg import Odometry
 import math
 import tf2_ros
-from geometry_msgs.msg import TransformStamped, Quaternion
+from geometry_msgs.msg import TransformStamped
+import tf_transformations
 
 class JointStateForwardKinematicsAll(Node):
     def __init__(self):
@@ -62,7 +63,7 @@ class JointStateForwardKinematicsAll(Node):
         self.odom_pub_double = self.create_publisher(Odometry, '/odom_double_track', 10)
 
         # Transform broadcaster
-        self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
+        # self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
 
         self.get_logger().info("JointState Forward Kinematics All node has started.")
 
@@ -103,18 +104,18 @@ class JointStateForwardKinematicsAll(Node):
         # ======= 1. Yaw Rate Model =======
         # ใช้ล้อหลังในการคำนวณ (Differential Drive)
         # คำนวณความเร็วเชิงเส้นและอัตราการหมุน
-        v_left_yaw = v_rl   # ใช้ล้อหลังซ้าย 
-        v_right_yaw = v_rr  # ใช้ล้อหลังขวา
-        V_yaw = (v_left_yaw + v_right_yaw) / 2.0
-        omega_yaw = (v_right_yaw - v_left_yaw) / self.W
+        v_left_yaw = v_rl #C
+        v_right_yaw = v_rr #C
+        V_yaw = (v_left_yaw + v_right_yaw) / 2.0 #C
+        omega_yaw = (v_right_yaw - v_left_yaw) / self.W #C
 
         # อัปเดต state โดยใช้ mid-point integration
-        self.x_yaw += V_yaw * dt * math.cos(self.theta_yaw + (omega_yaw * dt / 2.0))
-        self.y_yaw += V_yaw * dt * math.sin(self.theta_yaw + (omega_yaw * dt / 2.0))
-        self.theta_yaw += omega_yaw * dt
+        self.x_yaw += V_yaw * dt * math.cos(self.theta_yaw + (omega_yaw * dt / 2.0)) #C
+        self.y_yaw += V_yaw * dt * math.sin(self.theta_yaw + (omega_yaw * dt / 2.0)) #C
+        self.theta_yaw += omega_yaw * dt #C
 
-        self.v_yaw = V_yaw
-        self.omega_yaw = omega_yaw
+        self.v_yaw = V_yaw #C
+        self.omega_yaw = omega_yaw #C
 
         odom_yaw = self.create_odom_msg(self.x_yaw, self.y_yaw, self.theta_yaw, V_yaw, omega_yaw, msg.header.stamp)
 
@@ -164,7 +165,7 @@ class JointStateForwardKinematicsAll(Node):
         self.odom_pub_double.publish(odom_double)
 
         # Broadcast the transform (ใช้ state ของ Yaw Rate Model เป็นตัวแทน)
-        self.broadcast_transform(self.x_yaw, self.y_yaw, self.theta_yaw, msg.header.stamp)
+        # self.broadcast_transform(self.x_yaw, self.y_yaw, self.theta_yaw, msg.header.stamp)
 
     def create_odom_msg(self, x, y, theta, V, omega, stamp):
         from nav_msgs.msg import Odometry
@@ -176,36 +177,30 @@ class JointStateForwardKinematicsAll(Node):
         odom.pose.pose.position.x = x
         odom.pose.pose.position.y = y
         odom.pose.pose.position.z = 0.0
-        q = self.quaternion_from_euler(0, 0, theta)
-        odom.pose.pose.orientation = Quaternion(x=q[0], y=q[1], z=q[2], w=q[3])
+        q = tf_transformations.quaternion_from_euler(0.0, 0.0, theta)
+        odom.pose.pose.orientation.x = q[0]
+        odom.pose.pose.orientation.y = q[1]
+        odom.pose.pose.orientation.z = q[2]
+        odom.pose.pose.orientation.w = q[3]
         odom.twist.twist.linear.x = V
+        odom.twist.twist.linear.y = 0.0
         odom.twist.twist.angular.z = omega
         return odom
 
-    def broadcast_transform(self, x, y, theta, stamp):
-        t = TransformStamped()
-        t.header.stamp = stamp
-        t.header.frame_id = "odom"
-        t.child_frame_id = "base_link"
-        t.transform.translation.x = x
-        t.transform.translation.y = y
-        t.transform.translation.z = 0.0
-        q = self.quaternion_from_euler(0, 0, theta)
-        t.transform.rotation.x = q[0]
-        t.transform.rotation.y = q[1]
-        t.transform.rotation.z = q[2]
-        t.transform.rotation.w = q[3]
-        self.tf_broadcaster.sendTransform(t)
-
-    def quaternion_from_euler(self, roll, pitch, yaw):
-        """
-        Convert an Euler angle to a quaternion.
-        """
-        qx = math.sin(roll/2) * math.cos(pitch/2) * math.cos(yaw/2) - math.cos(roll/2) * math.sin(pitch/2) * math.sin(yaw/2)
-        qy = math.cos(roll/2) * math.sin(pitch/2) * math.cos(yaw/2) + math.sin(roll/2) * math.cos(pitch/2) * math.sin(yaw/2)
-        qz = math.cos(roll/2) * math.cos(pitch/2) * math.sin(yaw/2) - math.sin(roll/2) * math.sin(pitch/2) * math.cos(yaw/2)
-        qw = math.cos(roll/2) * math.cos(pitch/2) * math.cos(yaw/2) + math.sin(roll/2) * math.sin(pitch/2) * math.sin(yaw/2)
-        return [qx, qy, qz, qw]
+    # def broadcast_transform(self, x, y, theta, stamp):
+    #     t = TransformStamped()
+    #     t.header.stamp = stamp
+    #     t.header.frame_id = "odom"
+    #     t.child_frame_id = "base_link"
+    #     t.transform.translation.x = x
+    #     t.transform.translation.y = y
+    #     t.transform.translation.z = 0.0
+    #     q = tf_transformations.quaternion_from_euler(0, 0, theta)
+    #     t.transform.rotation.x = q[0]
+    #     t.transform.rotation.y = q[1]
+    #     t.transform.rotation.z = q[2]
+    #     t.transform.rotation.w = q[3]
+    #     self.tf_broadcaster.sendTransform(t)
 
 def main(args=None):
     rclpy.init(args=args)

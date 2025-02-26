@@ -21,7 +21,7 @@ def generate_launch_description():
     robot_con_share = get_package_share_directory('robot_controller')
     robot_sim_share = get_package_share_directory('robot_sim')
     rsp_file = os.path.join(robot_des_share, 'launch', 'rsp.launch.py')
-    rviz_file = os.path.join(robot_con_share, 'rviz', 'displaysim1.rviz')
+    rviz_file = os.path.join(robot_con_share, 'rviz', 'displaysim3.rviz')
 
     rsp = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -31,18 +31,6 @@ def generate_launch_description():
         ),
         launch_arguments={"use_sim_time":"true"}.items()
     )
-
-    # gazebo = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         [
-    #             os.path.join(
-    #                 get_package_share_directory("gazebo_ros"),
-    #                 "launch",
-    #                 "gazebo.launch.py"
-    #             )
-    #         ]
-    #     )
-    # )
 
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -71,30 +59,28 @@ def generate_launch_description():
         output="screen"
     )
 
-    # static_transform_publisher = Node(
-    #     package="tf2_ros",
-    #     executable="static_transform_publisher",
-    #     arguments=[spawn_x_val, "0", "0", "1.57", "0", "0", "world", "odom"],
-    #     output="screen"
-    # )
-
-    # Static Transform Publisher (world -> odom)
-    static_tf_world_odom = Node(
+    static_transform_publisher = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
-        arguments=[spawn_x_val, spawn_y_val, spawn_z_val, spawn_yaw_val, "0", "0", "world", "odom"],
-        output="screen"
-    )
-
-    track_robot = Node(
-        package="robot_sim",
-        executable="track_robot.py",
+        arguments=[spawn_x_val, "0", "0", "1.57", "0", "0", "world", "odom"],
         output="screen"
     )
 
     forward_kinematics = Node(
         package="robot_controller",
         executable="ForwardKinematic-All.py",
+        output="screen"
+    )
+
+    invert_kinematics = Node(
+        package="robot_controller",
+        executable="InverKinematic-nscc.py",
+        output="screen"
+    )
+
+    fake_gps = Node(
+        package="robot_fake",
+        executable="fake_gps.py",
         output="screen"
     )
 
@@ -167,9 +153,8 @@ def generate_launch_description():
     launch_description.add_action(gazebo)
     launch_description.add_action(spawn_entity)
     launch_description.add_action(rsp)
-    # launch_description.add_action(static_transform_publisher)
-    launch_description.add_action(static_tf_world_odom)
-    # launch_description.add_action(static_tf_world_base)
-    launch_description.add_action(track_robot)
+    launch_description.add_action(static_transform_publisher)
     launch_description.add_action(forward_kinematics)
+    launch_description.add_action(invert_kinematics)
+    launch_description.add_action(fake_gps)
     return launch_description
