@@ -33,6 +33,16 @@ install(PROGRAMS
   # scripts/ForwardKinematic-Single.py
   # scripts/ForwardKinematic-Yaw.py
   scripts/ForwardKinematic-All.py
+  #Controller
+  scripts/PID_control.py
+  scripts/PurePursuit_control.py
+  scripts/MPC_control.py
+  #controller part2
+  scripts/PID_control_part2.py
+  #EKF
+  scripts/EKF-Single.py
+  scripts/EKF-Double.py
+  scripts/EKF-Yaw.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

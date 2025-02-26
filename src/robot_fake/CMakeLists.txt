@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(robot_sim)
+project(robot_fake)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -28,7 +28,7 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   # scripts/dummy_script.py
-  scripts/track_robot.py
+  scripts/fake_gps.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -48,10 +48,7 @@ install(TARGETS
 
 ################ INSTALL LAUNCH, ETC #################
 install(DIRECTORY
-  launch
-  world
-  models
-  config
+  # add directories here
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()

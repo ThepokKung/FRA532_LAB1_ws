@@ -21,7 +21,7 @@ def generate_launch_description():
     robot_con_share = get_package_share_directory('robot_controller')
     robot_sim_share = get_package_share_directory('robot_sim')
     rsp_file = os.path.join(robot_des_share, 'launch', 'rsp.launch.py')
-    rviz_file = os.path.join(robot_con_share, 'rviz', 'displaysim1.rviz')
+    rviz_file = os.path.join(robot_con_share, 'rviz', 'displaysim3.rviz')
 
     rsp = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -77,7 +77,19 @@ def generate_launch_description():
         executable="ForwardKinematic-All.py",
         output="screen"
     )
-    
+
+    invert_kinematics = Node(
+        package="robot_controller",
+        executable="InverKinematic-nscc.py",
+        output="screen"
+    )
+
+    fake_gps = Node(
+        package="robot_fake",
+        executable="fake_gps.py",
+        output="screen"
+    )
+
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -143,6 +155,8 @@ def generate_launch_description():
     launch_description.add_action(spawn_entity)
     launch_description.add_action(rsp)
     launch_description.add_action(static_transform_publisher)
-    launch_description.add_action(track_robot)
     launch_description.add_action(forward_kinematics)
+    launch_description.add_action(invert_kinematics)
+    launch_description.add_action(fake_gps)
+    launch_description.add_action(track_robot)
     return launch_description

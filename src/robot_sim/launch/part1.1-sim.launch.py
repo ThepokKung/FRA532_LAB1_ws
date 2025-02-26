@@ -44,6 +44,18 @@ def generate_launch_description():
         )
     )
 
+    forward_kinematics = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            [
+                os.path.join(
+                    robot_con_share,
+                    "launch",
+                    "ForwardKinematic-all.py"
+                )
+            ]
+        )
+    )
+
     spawn_entity = Node(
         package="gazebo_ros",
         executable="spawn_entity.py",
@@ -69,12 +81,6 @@ def generate_launch_description():
     track_robot = Node(
         package="robot_sim",
         executable="track_robot.py",
-        output="screen"
-    )
-
-    forward_kinematics = Node(
-        package="robot_controller",
-        executable="ForwardKinematic-All.py",
         output="screen"
     )
     
