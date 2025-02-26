@@ -177,26 +177,27 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
+          base_link:
+            chassis:
+              back_left_wheel_link:
+                {}
+              back_right_wheel_link:
+                {}
+              camera_link:
+                camera_link_optical:
+                  {}
+              front_left_wheel_joint_link:
+                front_left_wheel_link:
+                  {}
+              front_right_wheel_joint_link:
+                front_right_wheel_link:
+                  {}
+              imu_link:
+                {}
+              laser_frame:
+                {}
           odom:
-            base_link:
-              chassis:
-                back_left_wheel_link:
-                  {}
-                back_right_wheel_link:
-                  {}
-                camera_link:
-                  camera_link_optical:
-                    {}
-                front_left_wheel_joint_link:
-                  front_left_wheel_link:
-                    {}
-                front_right_wheel_joint_link:
-                  front_right_wheel_link:
-                    {}
-                imu_link:
-                  {}
-                laser_frame:
-                  {}
+            {}
       Update Interval: 0
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -450,7 +451,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: odom
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
   Tools:

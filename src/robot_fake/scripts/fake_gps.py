@@ -14,7 +14,7 @@ class FakeGPS(Node):
             self.ground_truth_callback,
             10)
         self.publisher = self.create_publisher(Odometry, '/fake_gps', 10)
-        self.noise_level = 0.01  # Adjust the noise level as needed
+        self.noise_level = 0.1  # Adjust the noise level as needed
 
     def ground_truth_callback(self, msg):
         noisy_msg = Odometry()
