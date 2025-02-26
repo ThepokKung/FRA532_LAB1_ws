@@ -32,18 +32,6 @@ def generate_launch_description():
         launch_arguments={"use_sim_time":"true"}.items()
     )
 
-    # gazebo = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         [
-    #             os.path.join(
-    #                 get_package_share_directory("gazebo_ros"),
-    #                 "launch",
-    #                 "gazebo.launch.py"
-    #             )
-    #         ]
-    #     )
-    # )
-
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [
@@ -71,15 +59,7 @@ def generate_launch_description():
         output="screen"
     )
 
-    # static_transform_publisher = Node(
-    #     package="tf2_ros",
-    #     executable="static_transform_publisher",
-    #     arguments=[spawn_x_val, "0", "0", "1.57", "0", "0", "world", "odom"],
-    #     output="screen"
-    # )
-
-    # Static Transform Publisher (world -> odom)
-    static_tf_world_odom = Node(
+    static_transform_publisher = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
         arguments=[spawn_x_val, spawn_y_val, spawn_z_val, spawn_yaw_val, "0", "0", "world", "odom"],
@@ -97,11 +77,6 @@ def generate_launch_description():
         executable="ForwardKinematic-All.py",
         output="screen"
     )
-
-    # controller = Node(
-    #     package="my_controller",
-    #     executable="diff_drive.py"
-    # )
     
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
@@ -167,9 +142,7 @@ def generate_launch_description():
     launch_description.add_action(gazebo)
     launch_description.add_action(spawn_entity)
     launch_description.add_action(rsp)
-    # launch_description.add_action(static_transform_publisher)
-    launch_description.add_action(static_tf_world_odom)
-    # launch_description.add_action(static_tf_world_base)
+    launch_description.add_action(static_transform_publisher)
     launch_description.add_action(track_robot)
     launch_description.add_action(forward_kinematics)
     return launch_description
