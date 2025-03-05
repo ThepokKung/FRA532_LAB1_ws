@@ -1,37 +1,62 @@
 #!/usr/bin/env python3
+"""
+PID Path Tracking Controller for Ackermann Steering Mobile Robot
+
+This node:
+  - Loads a path (list of waypoints) from a YAML file.
+  - Subscribes to /ground_truth/pose to obtain the current robot pose.
+  - Uses a PID controller to reduce the heading and distance error between the robot and the current target waypoint.
+  - Publishes cmd_vel commands.
+
+Assumptions:
+  - The YAML file is either a list of waypoints or a dict with key "path".
+  - Each waypoint contains at least 'x' and 'y' (optionally 'yaw').
+
+ROS Parameters:
+  - Kp, Kp_omega, Ki, Kd: PID gains.
+  - lookahead_threshold: Distance threshold to switch to the next waypoint.
+  - linear_velocity: Nominal speed.
+"""
+
+import os
+import math
+import numpy as np
+import yaml
 
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
-import math
-import numpy as np
-import yaml
-import os
 from ament_index_python.packages import get_package_share_directory
 from tf_transformations import euler_from_quaternion
+
+
+def normalize_angle(angle: float) -> float:
+    """Normalize an angle to [-pi, pi]."""
+    return math.atan2(math.sin(angle), math.cos(angle))
 
 
 class PathTrackingPID(Node):
     def __init__(self):
         super().__init__('path_tracking_pid')
 
-        # Load the path from the path.yaml file
+        # --- Load Path ---
         path_file = os.path.join(
             get_package_share_directory('robot_controller'),
             'config',
             'path.yaml'
         )
-
         if os.path.exists(path_file):
             with open(path_file, 'r') as file:
-                self.path = yaml.safe_load(file)
+                data = yaml.safe_load(file)
+            # Support both dict with "path" key and direct list.
+            self.path = data.get('path', data) if isinstance(data, dict) else data
             self.get_logger().info(f"✅ Loaded path with {len(self.path)} waypoints from {path_file}")
         else:
             self.get_logger().error(f"❌ Path file not found: {path_file}")
             self.path = []
 
-        # PID gains (tunable)
+        # --- PID Gains and Parameters ---
         self.declare_parameter('Kp', 1.0)
         self.declare_parameter('Kp_omega', 1.0)
         self.declare_parameter('Ki', 0.0)
@@ -40,115 +65,123 @@ class PathTrackingPID(Node):
         self.Kp_omega = self.get_parameter('Kp_omega').value
         self.Ki = self.get_parameter('Ki').value
         self.Kd = self.get_parameter('Kd').value
-        # Lookahead threshold: distance threshold to consider a waypoint reached
-        self.declare_parameter('lookahead_threshold', 0.5)
-        self.lookahead_threshold = self.get_parameter(
-            'lookahead_threshold').value
 
-        # Constant linear velocity (m/s)
+        self.declare_parameter('lookahead_threshold', 0.5)
+        self.lookahead_threshold = self.get_parameter('lookahead_threshold').value
+
         self.declare_parameter('linear_velocity', 20.0)
         self.linear_velocity = self.get_parameter('linear_velocity').value
 
-        # PID state variables
+        # --- Internal State Variables ---
         self.integral_error = 0.0
-        self.prev_error = 0.0
+        self.last_distance_error = float('inf')
         self.prev_time = None
 
-        # Current target index in the path
-        self.current_target_index = 0
-
-        # Subscriber
-        self.odom_subscriber = self.create_subscription(
-            Odometry, '/ground_truth/pose', self.odom_callback, 10)
-
-        # Publisher
-        self.cmd_vel_publisher = self.create_publisher(Twist, 'cmd_vel', 10)
-
-        # Timer
-        self.timer = self.create_timer(0.1, self.control_loop)
-
-        # Variables
-        self.target_x = 0.0
-        self.target_y = 0.0
-        self.target_yaw = 0.0
         self.path_index = 0
-
-        self.error_sum = 0.0
-        self.last_error = 0.0
-        self.yaw_error = 0.0
-
         self.update_target()
 
+        # --- Subscribers and Publishers ---
+        self.create_subscription(Odometry, '/ground_truth/pose', self.odom_callback, 10)
+        self.cmd_vel_publisher = self.create_publisher(Twist, 'cmd_vel', 10)
+
+        # --- Timer for control loop ---
+        self.create_timer(0.1, self.control_loop)
+
         self.get_logger().info("🚀 PID Path Tracking Node Initialized")
-        self.get_logger().info(f"🔹 Kp={self.Kp}, Ki={self.Ki}, Kd={self.Kd}")
+        self.get_logger().info(f"🔹 Kp={self.Kp}, Ki={self.Ki}, Kd={self.Kd}, Kp_omega={self.Kp_omega}")
         self.get_logger().info(f"🔹 Lookahead Threshold = {self.lookahead_threshold} m")
         self.get_logger().info(f"🔹 Linear Velocity = {self.linear_velocity} m/s")
 
     def odom_callback(self, msg: Odometry):
+        """Update current pose from /ground_truth/pose."""
         self.current_x = msg.pose.pose.position.x
         self.current_y = msg.pose.pose.position.y
         orientation_q = msg.pose.pose.orientation
-        orientation_list = [orientation_q.x,orientation_q.y, orientation_q.z, orientation_q.w]
-        roll, pitch, yaw = euler_from_quaternion(orientation_list)
+        q = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
+        _, _, yaw = euler_from_quaternion(q)
         self.current_yaw = yaw
 
-    def update_target(self):
-        self.target_x = self.path[self.path_index]['x']
-        self.target_y = self.path[self.path_index]['y']
+        current_time = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+        if self.prev_time is None:
+            self.dt = 0.1
+        else:
+            self.dt = current_time - self.prev_time
+        self.prev_time = current_time
 
-    def publish_cmd(self, linear, angular):
-        """Publishes the velocity command."""
-        twist_msg = Twist()
-        twist_msg.linear.x = linear
-        twist_msg.angular.z = angular
-        self.cmd_vel_publisher.publish(twist_msg)
+    def update_target(self):
+        """Update the target waypoint based on the current path index."""
+        if self.path and self.path_index < len(self.path):
+            wp = self.path[self.path_index]
+            self.target_x = wp.get('x', 0.0)
+            self.target_y = wp.get('y', 0.0)
+            self.target_yaw = wp.get('yaw', 0.0)
+        else:
+            self.target_x = self.target_y = self.target_yaw = 0.0
+
+    def publish_cmd(self, linear: float, angular: float):
+        """Publish a Twist message with given linear and angular velocities."""
+        twist = Twist()
+        twist.linear.x = linear
+        twist.angular.z = angular
+        self.cmd_vel_publisher.publish(twist)
 
     def control_loop(self):
-        if self.last_error < 0.5:
+        """Run the PID control loop."""
+        # Calculate errors
+        error_x = self.target_x - getattr(self, 'current_x', 0.0)
+        error_y = self.target_y - getattr(self, 'current_y', 0.0)
+        desired_heading = math.atan2(error_y, error_x)
+        heading_error = normalize_angle(desired_heading - getattr(self, 'current_yaw', 0.0))
+        distance_error = math.hypot(error_x, error_y)
+
+        self.get_logger().debug(f"Target: ({self.target_x:.2f}, {self.target_y:.2f}), "
+                                  f"Current: ({getattr(self, 'current_x', 0.0):.2f}, {getattr(self, 'current_y', 0.0):.2f})")
+        self.get_logger().debug(f"Distance error: {distance_error:.2f}, Heading error: {math.degrees(heading_error):.2f}°")
+
+        # If close enough, update to next waypoint
+        if distance_error < self.lookahead_threshold:
             if self.path_index + 1 < len(self.path):
                 self.path_index += 1
                 self.update_target()
+                self.get_logger().info(f"✅ Reached waypoint {self.path_index - 1}, switching to waypoint {self.path_index}")
             else:
                 self.publish_cmd(0.0, 0.0)
-                self.get_logger().info('🏁 Path tracking completed lap')
+                self.get_logger().info("🏁 Path tracking completed")
                 return
 
-        # Calculate the error
-        error_x = self.target_x - self.current_x
-        error_y = self.target_y - self.current_y
-        error_yaw = math.atan2(error_y, error_x) - self.current_yaw
-        error_yaw = math.atan2(math.sin(error_yaw), math.cos(error_yaw))
+        # Update PID errors
+        self.integral_error += distance_error * self.dt
+        derivative = (distance_error - self.last_distance_error) / self.dt if self.dt > 0 else 0.0
 
-        distance_error = math.sqrt(error_x**2 + error_y**2)
+        # Compute control signals
+        linear_cmd = self.Kp * distance_error + self.Ki * self.integral_error + self.Kd * derivative
+        angular_cmd = self.Kp_omega * heading_error
 
-        self.error_sum += distance_error
-        error_diff = distance_error - self.last_error
+        # Limit control outputs
+        linear_cmd = np.clip(linear_cmd, -0.5, 0.5)
+        angular_cmd = np.clip(angular_cmd, -1.0, 1.0)
 
-        # PID control
-        control_linear = self.Kp * distance_error + \
-            self.Ki * self.error_sum + self.Kd * error_diff
-        control_angular = self.Kp_omega * error_yaw
+        # Publish command
+        self.publish_cmd(linear_cmd, angular_cmd)
 
-        # Limit the speed
-        control_linear = np.clip(control_linear, -0.5, 0.5)
-        control_angular = np.clip(control_angular, -1, 1)
+        self.get_logger().info(f"🎯 Target: ({self.target_x:.2f}, {self.target_y:.2f}, {math.degrees(self.target_yaw):.1f}°)")
+        self.get_logger().info(f"Error: distance={distance_error:.2f}, heading={math.degrees(heading_error):.2f}°")
+        self.get_logger().info(f"Control: linear={linear_cmd:.2f}, angular={math.degrees(angular_cmd):.2f}°/s")
 
-        # Publish Control Commands
-        self.publish_cmd(control_linear, control_angular)
+        # Update last error
+        self.last_distance_error = distance_error
 
-        self.get_logger().info(f'🎯 Target waypoint: {self.target_x}, {self.target_y}, {self.target_yaw}')
-        self.get_logger().info(f'   Error: {distance_error}, Yaw Error: {error_yaw}, Linear: {control_linear}, Angular: {control_angular}')
-
-        # Update the error
-        self.last_error = distance_error
-        self.yaw_error = error_yaw
 
 def main(args=None):
     rclpy.init(args=args)
     node = PathTrackingPID()
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info("Keyboard interrupt, shutting down node.")
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
