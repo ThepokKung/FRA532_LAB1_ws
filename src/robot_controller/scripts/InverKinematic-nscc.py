@@ -4,7 +4,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
-from math import atan, tan, isclose
+from math import atan, isclose
 
 
 class InverseKinematics(Node):
@@ -53,11 +53,12 @@ class InverseKinematics(Node):
         # คำนวณความเร็วล้อ (ถ้าวิ่งตรง ทุกล้อเท่ากัน)
         if R == float('inf'):
             V_fl = V_fr = V_rl = V_rr = X
-        else:
+        elif R != 0:
             V_fl = X * (R - self.W / 2) / R
             V_fr = X * (R + self.W / 2) / R
-            # ในรถ Ackermann ล้อหลังมักใช้ความเร็วเฉลี่ย X
             V_rl = V_rr = X
+        else:
+            V_fl = V_fr = V_rl = V_rr = 0.0
 
         # ส่งค่าควบคุมความเร็วล้อ
         vel_msg = Float64MultiArray()
