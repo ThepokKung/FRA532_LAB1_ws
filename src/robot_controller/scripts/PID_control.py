@@ -26,8 +26,7 @@ class PathTrackingPID(Node):
         if os.path.exists(path_file):
             with open(path_file, 'r') as file:
                 self.path = yaml.safe_load(file)
-            self.get_logger().info(
-                f"✅ Loaded path with {len(self.path)} waypoints from {path_file}")
+            self.get_logger().info(f"✅ Loaded path with {len(self.path)} waypoints from {path_file}")
         else:
             self.get_logger().error(f"❌ Path file not found: {path_file}")
             self.path = []
@@ -82,17 +81,14 @@ class PathTrackingPID(Node):
 
         self.get_logger().info("🚀 PID Path Tracking Node Initialized")
         self.get_logger().info(f"🔹 Kp={self.Kp}, Ki={self.Ki}, Kd={self.Kd}")
-        self.get_logger().info(
-            f"🔹 Lookahead Threshold = {self.lookahead_threshold} m")
-        self.get_logger().info(
-            f"🔹 Linear Velocity = {self.linear_velocity} m/s")
+        self.get_logger().info(f"🔹 Lookahead Threshold = {self.lookahead_threshold} m")
+        self.get_logger().info(f"🔹 Linear Velocity = {self.linear_velocity} m/s")
 
     def odom_callback(self, msg: Odometry):
         self.current_x = msg.pose.pose.position.x
         self.current_y = msg.pose.pose.position.y
         orientation_q = msg.pose.pose.orientation
-        orientation_list = [orientation_q.x,
-                            orientation_q.y, orientation_q.z, orientation_q.w]
+        orientation_list = [orientation_q.x,orientation_q.y, orientation_q.z, orientation_q.w]
         roll, pitch, yaw = euler_from_quaternion(orientation_list)
         self.current_yaw = yaw
 

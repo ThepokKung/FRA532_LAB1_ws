@@ -37,9 +37,10 @@ install(PROGRAMS
   scripts/PID_control.py
   scripts/PurePursuit_control.py
   scripts/MPC_control.py
+  scripts/Stanley_control.py
   #controller part3
-  scripts/PID_control_part3.py
-  scripts/PurePursuit_control_part3.py
+  # scripts/PID_control_part3.py
+  # scripts/PurePursuit_control_part3.py
   #EKF
   scripts/EKF-Single.py
   scripts/EKF-Double.py

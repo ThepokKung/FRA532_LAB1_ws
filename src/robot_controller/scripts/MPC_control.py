@@ -1,17 +1,4 @@
-#!/usr/bin/python3
-"""
-mpc_controller.py
-
-MPC Controller for Ackermann Steering Mobile Robot.
-
-- Load path from YAML file (from package 'robot_controller/config/path.yaml')
-- Subscribe to ground truth odometry from /ground_truth/odom
-- Continuously follow the path from the first waypoint to the final waypoint.
-- Use MPC to compute control commands.
-- Publish cmd_vel (Twist message) on /cmd_vel (linear.x and angular.z)
-- Detailed logging is provided at initialization and during each control cycle.
-"""
-
+#!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
@@ -22,6 +9,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 import numpy as np
 from scipy.optimize import minimize
+from tf_transformations import euler_from_quaternion
 
 def normalize_angle(angle):
     """Normalize an angle to [-pi, pi]."""
@@ -61,7 +49,7 @@ class MPCController(Node):
         self.L = self.get_parameter('wheelbase').value
 
         # Control parameters
-        self.declare_parameter('linear_velocity', 20.0)  # m/s
+        self.declare_parameter('linear_velocity', 1.0)  # m/s
         self.linear_velocity = self.get_parameter('linear_velocity').value
 
         # Threshold for waypoint reaching
@@ -82,15 +70,14 @@ class MPCController(Node):
         self.get_logger().info("🚀 MPC Controller Node Initialized")
         self.get_logger().info(f"🔹 Horizon: {self.horizon}, dt: {self.dt}")
         self.get_logger().info(f"🔹 Q: {self.Q}, R: {self.R}")
-        self.get_logger().info(
-            f"🔹 Wheelbase: {self.L} m, Linear Velocity: {self.linear_velocity} m/s")
+        self.get_logger().info(f"🔹 Wheelbase: {self.L} m, Linear Velocity: {self.linear_velocity} m/s")
 
     def odom_callback(self, msg: Odometry):
         cx = msg.pose.pose.position.x
         cy = msg.pose.pose.position.y
-        q = msg.pose.pose.orientation
-        current_yaw = math.atan2(
-            2*(q.w*q.z + q.x*q.y), 1 - 2*(q.y*q.y + q.z*q.z))
+        orientation_q = msg.pose.pose.orientation
+        orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
+        _, _, current_yaw = euler_from_quaternion(orientation_list)
         v = msg.twist.twist.linear.x
 
         # Get current target waypoint
