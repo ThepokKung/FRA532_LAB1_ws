@@ -61,16 +61,22 @@ class PathTrackingStanleyController(Node):
         self.cmd_vel_pub = self.create_publisher(Twist, 'cmd_vel', 10)
         self.timer = self.create_timer(0.1, self.control_loop)
 
-        # --- Vehicle and Controller Parameters ---
-        self.wheelbase = 0.2       # m
-        self.track_width = 0.13    # m
-
         # Stanley controller gains and switching threshold (m)
-        self.kp_v = 1.0
-        self.k_cross = 1.0         # Gain for cross-track error
-        self.k_soft = 0.1          # Softening constant to avoid instability
-        self.switch_threshold = 1.0  # Distance error threshold for switching waypoints
+        self.declare_parameter('Kp_v', 1.0)
+        self.declare_parameter('k_cross', 1.0)
+        self.declare_parameter('k_soft', 0.1)
+        self.declare_parameter('switch_threshold', 1.0)
+        self.Kp_v = self.get_parameter('Kp_v').value
+        self.k_cross = self.get_parameter('k_cross').value  # Gain for cross-track error
+        self.k_soft = self.get_parameter('k_soft').value    # Softening constant to avoid instability
+        self.switch_threshold = self.get_parameter('switch_threshold').value    # Distance error threshold for switching waypoints
 
+        # --- Vehicle and Controller Parameters ---
+        self.declare_parameter('wheelbase', 0.20)    # L (m)
+        self.declare_parameter('track_width', 0.13)    # W (m)
+        self.wheelbase = self.get_parameter('wheelbase').value
+        self.track_width = self.get_parameter('track_width').value
+        
         # --- Internal State Variables ---
         self.path_index = 0
         self.update_target()  # Set first waypoint as target

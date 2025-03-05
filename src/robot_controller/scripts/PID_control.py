@@ -69,7 +69,7 @@ class PathTrackingPID(Node):
         self.declare_parameter('lookahead_threshold', 0.5)
         self.lookahead_threshold = self.get_parameter('lookahead_threshold').value
 
-        self.declare_parameter('linear_velocity', 20.0)
+        self.declare_parameter('linear_velocity', 1.0)
         self.linear_velocity = self.get_parameter('linear_velocity').value
 
         # --- Internal State Variables ---
