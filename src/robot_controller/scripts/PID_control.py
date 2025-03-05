@@ -57,7 +57,7 @@ class PIDPathTracking(Node):
         self.lookahead_threshold = self.get_parameter('lookahead_threshold').value
 
         # Constant linear velocity (m/s)
-        self.declare_parameter('linear_velocity', 20.0)
+        self.declare_parameter('linear_velocity', 5.0)
         self.linear_velocity = self.get_parameter('linear_velocity').value
 
         # PID state variables

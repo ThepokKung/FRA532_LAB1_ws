@@ -51,7 +51,7 @@ class PurePursuitController(Node):
         self.L = self.get_parameter('wheelbase').value
 
         # Control parameters
-        self.declare_parameter('linear_velocity', 20.0)  # m/s
+        self.declare_parameter('linear_velocity', 20)  # m/s
         self.linear_velocity = self.get_parameter('linear_velocity').value
         
         # Threshold for waypoint reaching

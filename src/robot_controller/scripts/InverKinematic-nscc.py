@@ -4,7 +4,8 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
-from math import atan, isclose
+import numpy as np
+from math import isclose, atan, tan
 
 
 class InverseKinematics(Node):
@@ -14,11 +15,13 @@ class InverseKinematics(Node):
         # พารามิเตอร์หุ่นยนต์
         self.declare_parameter('wheelbase', 0.20)    # L (m)
         self.declare_parameter('track_width', 0.13)    # W (m)
+        self.declare_parameter('wheel_radius', 0.045)    # r (m)
         self.L = self.get_parameter('wheelbase').value
         self.W = self.get_parameter('track_width').value
+        self.r = self.get_parameter('wheel_radius').value
 
         # Maximum allowed steering angle (rad)
-        self.max_steer = 0.523598767 # 30 degrees
+        self.max_steer = 0.523598767  # 30 degrees
 
         # Subscriber รับ /cmd_vel
         self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)
@@ -32,33 +35,37 @@ class InverseKinematics(Node):
         self.get_logger().info("Inverse Kinematics NSCC Model node has started.")
 
     def cmd_vel_callback(self, msg):
-        X = msg.linear.x     # ความเร็วเชิงเส้น (m/s)
-        omega = msg.angular.z  # ความเร็วเชิงมุม (rad/s)
+        V_x = msg.linear.x
+        omega = msg.angular.z
 
-        # คำนวณรัศมีการเลี้ยว R โดยใช้สมการ: R = X / ω
-        if isclose(omega, 0.0, abs_tol=1e-6):
-            R = float('inf')
-            delta_left = 0.0
-            delta_right = 0.0
+        if omega == 0:
+            omega = 1e-5
+
+        if V_x == 0:
+            delta = 0.0
         else:
-            R = X / omega
-            # คำนวณมุมเลี้ยวล้อหน้า (Ackermann geometry)
-            delta_left = atan(self.L / (R - self.W / 2))
-            delta_right = atan(self.L / (R + self.W / 2))
+            delta = atan(omega * self.L / V_x)
 
-        # จำกัดมุมเลี้ยวไม่ให้เกิน ±max_steer
-        delta_left = max(min(delta_left, self.max_steer), -self.max_steer)
-        delta_right = max(min(delta_right, self.max_steer), -self.max_steer)
+        if delta > self.max_steer:
+            delta = self.max_steer
+        elif delta < -self.max_steer:
+            delta = -self.max_steer
 
-        # คำนวณความเร็วล้อ (ถ้าวิ่งตรง ทุกล้อเท่ากัน)
-        if R == float('inf'):
-            V_fl = V_fr = V_rl = V_rr = X
-        elif R != 0:
-            V_fl = X * (R - self.W / 2) / R
-            V_fr = X * (R + self.W / 2) / R
-            V_rl = V_rr = X
+        V_wr = V_x / self.r
+
+        tan_delta = tan(delta)
+        delta_left = atan(self.L * tan_delta /
+                          (self.L + 0.5 * self.W * tan_delta))
+        delta_right = atan(self.L * tan_delta /
+                           (self.L - 0.5 * self.W * tan_delta))
+
+        if delta != 0:
+            V_rl = V_rr = V_wr
+            R = self.L / tan_delta
+            V_fl = V_wr / np.abs(V_wr) * np.abs(omega *np.linalg.norm([self.L, R])/self.r)
+            V_fr = V_wr / np.abs(V_wr) * np.abs(omega *np.linalg.norm([self.L, R - self.W])/self.r)
         else:
-            V_fl = V_fr = V_rl = V_rr = 0.0
+            V_fl = V_fr = V_rl = V_rr = V_wr
 
         # ส่งค่าควบคุมความเร็วล้อ
         vel_msg = Float64MultiArray()
@@ -67,11 +74,10 @@ class InverseKinematics(Node):
 
         # ส่งค่าควบคุมมุมเลี้ยวล้อหน้า
         steer_msg = Float64MultiArray()
-        steer_msg.data = [delta_left, delta_right]
+        steer_msg.data = [float(delta_left), float(delta_right)]
         self.steering_pub.publish(steer_msg)
 
-        self.get_logger().info(
-            f"Commanded ω: {omega:.3f} rad/s, R: {R if R != float('inf') else 'inf'}")
+        # self.get_logger().info(f"Commanded ω: {omega:.3f} rad/s, R: {R if R != float('inf') else 'inf'}")
         self.get_logger().info(
             f"Steering: Left={delta_left:.3f} rad, Right={delta_right:.3f} rad")
         self.get_logger().info(

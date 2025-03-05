@@ -4,7 +4,8 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64MultiArray
-from math import atan, tan, isclose
+import numpy as np
+from math import isclose, atan2, atan
 
 
 class InverseKinematics(Node):
@@ -14,8 +15,10 @@ class InverseKinematics(Node):
         # Load robot parameters
         self.declare_parameter('wheelbase', 0.20)    # L (m)
         self.declare_parameter('track_width', 0.13)    # W (m)
+        self.declare_parameter('wheel_radius', 0.045)    # r (m)
         self.L = self.get_parameter('wheelbase').value
         self.W = self.get_parameter('track_width').value
+        self.r = self.get_parameter('wheel_radius').value
 
         # Maximum allowed steering angle (rad)
         self.max_steer = 0.523598767    # 30 degrees
@@ -32,28 +35,30 @@ class InverseKinematics(Node):
         self.get_logger().info("Inverse Kinematics Basic Model node has started.")
 
     def cmd_vel_callback(self, msg):
-        X = msg.linear.x
+        V_x = msg.linear.x
         omega = msg.angular.z
 
-        # Calculate turning radius R using the equation: R = X / ω
-        if isclose(omega, 0.0, abs_tol=1e-6):
-            R = float('inf')
-            delta_left = 0.0
-            delta_right = 0.0
-        else:
-            R = X / omega
-            # Calculate front wheel steering angles (Ackermann geometry)
-            delta_left = atan(self.L / (R - self.W / 2))
-            delta_right = atan(self.L / (R + self.W / 2))
+        if omega == 0:
+            omega = 1e-5
 
-        # Calculate wheel speeds (if moving straight, all wheels have the same speed)
-        if R == float('inf'):
-            V_fl = V_fr = V_rl = V_rr = X
+        if V_x == 0:
+            delta = 0.0
         else:
-            V_fl = omega * (R - self.W / 2)
-            V_fr = omega * (R + self.W / 2)
-            # In Ackermann steering, rear wheels typically use the average speed X
-            V_rl = V_rr = X
+            delta = atan(omega * self.L / V_x)
+
+        if delta > self.max_steer:
+            delta = self.max_steer
+        elif delta < -self.max_steer:
+            delta = -self.max_steer
+
+        delta_left = delta_right = delta
+
+        V_wr = V_rl = V_rr = V_x / self.r
+        if V_wr == 0:
+            V_fl = V_fr = 0.0
+        else:
+            V_fl = V_fr = V_wr / np.abs(V_wr) * \
+                np.linalg.norm([self.L * omega, V_x])/self.r
 
         # Publish control values
         velocity_control_msg = Float64MultiArray()
@@ -64,8 +69,7 @@ class InverseKinematics(Node):
         steering_angles_msg.data = [delta_left, delta_right]
         self.steering_control_pub.publish(steering_angles_msg)
 
-        self.get_logger().info(
-            f"Commanded ω: {omega:.3f} rad/s, R: {R if R != float('inf') else 'inf'}")
+        # self.get_logger().info(f"Commanded ω: {omega:.3f} rad/s, R: {R if R != float('inf') else 'inf'}")
         self.get_logger().info(
             f"Steering: Left={delta_left:.3f} rad, Right={delta_right:.3f} rad")
         self.get_logger().info(
