@@ -38,14 +38,14 @@ class InverseKinematics(Node):
         V_x = msg.linear.x
         omega = msg.angular.z
 
-        if omega == 0:
+        if isclose(omega, 0.0):
             omega = 1e-5
 
-        if V_x == 0:
-            delta = 0.0
-        else:
-            delta = atan(omega * self.L / V_x)
+        delta = atan(omega * self.L / V_x) if V_x != 0 else 0.0
+        delta = max(min(delta, self.max_steer), -self.max_steer)
 
+        V_wr = V_x / self.r
+        tan_delta = tan(delta)
         if delta > self.max_steer:
             delta = self.max_steer
         elif delta < -self.max_steer:
