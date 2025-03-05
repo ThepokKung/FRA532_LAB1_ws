@@ -1,5 +1,4 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-
     <!-- Import the inertial macros -->
     <xacro:include filename="inertial_macros.xacro"/>
 
@@ -23,27 +22,27 @@
 
     <!-- chassis link -->
     <joint name="chassis_joint" type="fixed">
-        <origin xyz="0.0 0.0 0.095" rpy="0.0 0.0 0.0"/>
+        <origin xyz="-0.1 0.0 0.0" rpy="0.0 0.0 0.0"/>
         <parent link="base_link"/>
         <child link="chassis"/>
     </joint>
 
     <link name="chassis">
         <visual name="">
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <origin xyz="0.1 0.0 -0.05" rpy="0.0 0.0 1.57"/>
             <geometry>
-                <box size="0.20 0.13 0.1"/>
+                <mesh filename="file://$(find ${description_package})/meshes/limo_base.dae"/>
             </geometry>
             <material name="white"/>
         </visual>
         <collision>
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <origin xyz="0.075 0.0 0.045" rpy="0.0 0.0 0.0"/>
             <geometry>
-                <box size="0.20 0.13 0.1"/>
+                <box size="0.15 0.13 0.1"/>
             </geometry>
         </collision>
-        <xacro:inertial_box mass="3.0" x="0.13" y="0.2" z="0.1">
-            <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+        <xacro:inertial_box mass="5.5" x="0.2" y="0.13" z="0.1">
+             <origin xyz="0.1 0 0.045" rpy="0 0 0"/>
         </xacro:inertial_box>
     </link>
 
@@ -61,23 +60,23 @@
     </link>
 
     <joint name="front_left_steering_joint" type="revolute">
-        <origin xyz="0.10 0.07 -0.045" rpy="0.0 0.0 0.0"/>
-        <parent link="chassis"/>
+        <origin xyz="0.1 0.07 0.0" rpy="0.0 0.0 0.0"/>
+        <parent link="base_link"/>
         <child link="front_left_wheel_joint_link"/>
         <axis xyz="0.0 0.0 1.0"/>
-        <limit lower="-0.7854" upper="0.7854" effort="0.0" velocity="0.0"/>
+        <limit lower="-0.7854" upper="0.7854" effort="10.0" velocity="3.0"/>
     </joint>
 
     <link name="front_left_wheel_link">
         <visual name="">
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <origin xyz="0.0 0.0 -0.005" rpy="1.57 0.0 0.0"/>
             <geometry>
-                <cylinder radius="0.045" length="0.01"/>
+                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
             </geometry>
             <material name="blue"/>
         </visual>
         <collision>
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
             <geometry>
                 <cylinder radius="0.045" length="0.01"/>
             </geometry>
@@ -108,23 +107,23 @@
     </link>
 
     <joint name="front_right_steering_joint" type="revolute">
-        <origin xyz="0.10 -0.07 -0.045" rpy="0.0 0.0 0.0"/>
-        <parent link="chassis"/>
+        <origin xyz="0.1 -0.07 0.0" rpy="0.0 0.0 0.0"/>
+        <parent link="base_link"/>
         <child link="front_right_wheel_joint_link"/>
         <axis xyz="0.0 0.0 1.0"/>
-        <limit lower="-0.7854" upper="0.7854" effort="0.0" velocity="0.0"/>
+        <limit lower="-0.785" upper="0.785" effort="10.0" velocity="3.0"/>
     </joint>
 
     <link name="front_right_wheel_link">
         <visual name="">
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <origin xyz="0.0 0.0 -0.005" rpy="1.57 0.0 0.0"/>
             <geometry>
-                <cylinder radius="0.045" length="0.01"/>
+                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
             </geometry>
             <material name="blue"/>
         </visual>
         <collision>
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
             <geometry>
                 <cylinder radius="0.045" length="0.01"/>
             </geometry>
@@ -135,10 +134,10 @@
     </link>
 
     <joint name="front_right_wheel" type="continuous">
-        <origin xyz="0.0 0.0 0.0" rpy="-1.57 0.0 0.0"/>
+        <origin xyz="0.0 0.0 0.0" rpy="1.57 0.0 0.0"/>
         <parent link="front_right_wheel_joint_link"/>
         <child link="front_right_wheel_link"/>
-        <axis xyz="0.0 0.0 1.0"/>
+        <axis xyz="0.0 0.0 -1.0"/>
     </joint>
 
     <gazebo reference="front_right_wheel_link">
@@ -147,22 +146,22 @@
 
     <!-- back left wheel -->
     <joint name="back_left_wheel" type="continuous">
-        <origin xyz="-0.10 0.07 -0.045" rpy="-1.57 0.0 0.0"/>
-        <parent link="chassis"/>
+        <origin xyz="-0.1 0.07 0.0" rpy="-1.57 0.0 0.0"/>
+        <parent link="base_link"/>
         <child link="back_left_wheel_link"/>
         <axis xyz="0.0 0.0 1.0"/>
     </joint>
 
     <link name="back_left_wheel_link">
         <visual name="">
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <origin xyz="0 0 -0.005" rpy="1.57 0 0"/>
             <geometry>
-                <cylinder radius="0.045" length="0.01"/>
+                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
             </geometry>
             <material name="black"/>
         </visual>
         <collision>
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
             <geometry>
                 <cylinder radius="0.045" length="0.01"/>
             </geometry>
@@ -178,23 +177,23 @@
 
     <!-- back right wheel -->
     <joint name="back_right_wheel" type="continuous">
-        <origin xyz="-0.10 -0.07 -0.045" rpy="-1.57 0.0 0.0"/>
-        <parent link="chassis"/>
+        <origin xyz="-0.1 -0.07 0" rpy="1.57 0 0" />
+        <parent link="base_link"/>
         <child link="back_right_wheel_link"/>
-        <axis xyz="0.0 0.0 1.0"/>
+        <axis xyz="0.0 0.0 -1.0"/>
         <limit lower="0.0" upper="0.0" effort="0.0" velocity="0.0"/>
     </joint>
 
     <link name="back_right_wheel_link">
         <visual name="">
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <origin xyz="0 0 -0.005" rpy="1.57 0 0"/>
             <geometry>
-                <cylinder radius="0.045" length="0.01"/>
+                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
             </geometry>
             <material name="black"/>
         </visual>
         <collision>
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
             <geometry>
                 <cylinder radius="0.045" length="0.01"/>
             </geometry>
