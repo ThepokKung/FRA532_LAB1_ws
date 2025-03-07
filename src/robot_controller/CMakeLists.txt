@@ -36,7 +36,7 @@ install(PROGRAMS
   #Controller
   scripts/PID_control.py
   scripts/PurePursuit_control.py
-  scripts/MPC_control.py
+  # scripts/MPC_control.py
   scripts/Stanley_control.py
   #controller part3
   # scripts/PID_control_part3.py
@@ -47,7 +47,6 @@ install(PROGRAMS
   scripts/EKF-Yaw.py
   DESTINATION lib/${PROJECT_NAME}
 )
-
 
 # Include Cpp "include" directory
 include_directories(include)

@@ -66,10 +66,12 @@ class PathTrackingStanleyController(Node):
         self.declare_parameter('k_cross', 1.0)
         self.declare_parameter('k_soft', 0.1)
         self.declare_parameter('switch_threshold', 1.0)
+        self.declare_parameter('max_speed', 1.0)
         self.Kp_v = self.get_parameter('Kp_v').value
         self.k_cross = self.get_parameter('k_cross').value  # Gain for cross-track error
         self.k_soft = self.get_parameter('k_soft').value    # Softening constant to avoid instability
         self.switch_threshold = self.get_parameter('switch_threshold').value    # Distance error threshold for switching waypoints
+        self.max_speed = self.get_parameter('max_speed').value
 
         # --- Vehicle and Controller Parameters ---
         self.declare_parameter('wheelbase', 0.20)    # L (m)
@@ -139,15 +141,14 @@ class PathTrackingStanleyController(Node):
         v_const = self.kp_v  # Alternatively, set a different constant speed if needed
         # Compute cross-track error by projecting the error vector onto a vector perpendicular to current heading.
         perp_angle = self.current_yaw + math.pi / 2.0
-        cross_track_error = np.dot(np.array([math.cos(perp_angle), math.sin(perp_angle)]),
-                                    np.array([error_x, error_y]))
+        cross_track_error = np.dot(np.array([math.cos(perp_angle), math.sin(perp_angle)]),np.array([error_x, error_y]))
         cross_track_steering = math.atan2(self.k_cross * cross_track_error, v_const + self.k_soft)
         control_angular = heading_error + cross_track_steering
         control_linear = v_const  # Use constant speed command
 
         # Limit commands
-        control_linear = np.clip(control_linear, -1.0, 1.0)
-        control_angular = np.clip(control_angular, -1.0, 1.0)
+        control_linear = np.clip(control_linear, -self.max_speed, self.max_speed)
+        control_angular = np.clip(control_angular, -self.max_speed, self.max_speed)
 
         # Publish command
         self.publish_cmd(control_linear, control_angular)

@@ -32,12 +32,11 @@ class InverseKinematics(Node):
         self.declare_parameter('wheelbase', 0.20)    # L (m)
         self.declare_parameter('track_width', 0.13)    # W (m)
         self.declare_parameter('wheel_radius', 0.045)  # r (m)
+        self.declare_parameter('max_steer', 0.523598767)  # Maximum steering angle (30 degrees)
         self.L = self.get_parameter('wheelbase').value
         self.W = self.get_parameter('track_width').value
         self.r = self.get_parameter('wheel_radius').value
-
-        # Maximum allowed steering angle (rad)
-        self.max_steer = 0.523598767  # 30 degrees
+        self.max_steer = self.get_parameter('max_steer').value
 
         # Subscriber for /cmd_vel
         self.create_subscription(Twist, '/cmd_vel', self.cmd_vel_callback, 10)

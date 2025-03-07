@@ -51,9 +51,11 @@ class PathTrackingPurePursuit(Node):
         self.declare_parameter('Kp_v', 1.0)
         self.declare_parameter('Kp_omega', 0.1)
         self.declare_parameter('switch_threshold', 1.0)
+        self.declare_parameter('max_speed', 1.0)
         self.lookahead_distance = self.get_parameter('lookahead_distance').value
         self.Kp_v = self.get_parameter('Kp_v').value  
-        self.Kp_omega = self.get_parameter('Kp_omega').value    
+        self.Kp_omega = self.get_parameter('Kp_omega').value
+        self.max_speed = self.get_parameter('max_speed').value
 
         # --- Internal State ---
         self.path_index = 0
@@ -123,8 +125,8 @@ class PathTrackingPurePursuit(Node):
         angular_cmd = self.Kp_omega * heading_error
 
         # Limit commands
-        linear_cmd = np.clip(linear_cmd, -0.5, 0.5)
-        angular_cmd = np.clip(angular_cmd, -1, 1)
+        linear_cmd = np.clip(linear_cmd, -self.max_speed, self.max_speed)
+        angular_cmd = np.clip(angular_cmd, -self.max_speed, self.max_speed)
 
         self.publish_cmd(linear_cmd, angular_cmd)
 
