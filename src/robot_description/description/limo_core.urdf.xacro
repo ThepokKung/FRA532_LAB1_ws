@@ -1,210 +1,193 @@
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <!-- Import the inertial macros -->
+<?xml version="1.0"?>
+
+<robot name="limo" xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!-- Import macros -->
     <xacro:include filename="inertial_macros.xacro"/>
 
-    <!-- COLOR NAME  -->
-    <material name="white">
-        <color rgba="1 1 1 1" />
-    </material>
-    <material name="black">
-        <color rgba="0 0 0 1"/>
-    </material>
-    <material name="blue">
-        <color rgba="0 0 1 1"/>
-    </material>
-    <material name="red">
-        <color rgba="1 0 0 1"/>
-    </material>
+    <!-- Base Footprint Link -->
+        <link name="base_footprint"/>
+
+    <!-- Chassis -->
+        <!-- Joint -->
+        <joint name="chassis_joint" type="fixed">
+            <origin xyz="0 0 0.15" rpy="0 0 0"/>
+            <parent link="base_footprint"/>
+            <child link="chassis_link"/>
+        </joint>
+
+        <!-- Link -->
+        <link name="chassis_link">
+            <visual name="">
+                <origin xyz="0 0 -0.15" rpy="0 0 1.57" />
+                <geometry>
+                    <mesh filename="file://$(find robot_description)/meshes/limo_optimal.dae" scale="1 1 1"/>
+                </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="0.20 0.13 0.1"/>
+                </geometry>
+            </collision>
+            <xacro:inertial_box mass="2.0" x="0.2" y="0.13" z="0.1">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+            </xacro:inertial_box>
+        </link>
 
 
-    <!-- base link -->
-    <link name="base_link"/>
+    <!-- Front Left Steering -->
+        <!-- Link -->
+        <link name="front_left_steering_link">
+            <inertial>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <mass value="0.1"/>
+                <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+            </inertial>
+        </link>
 
-    <!-- chassis link -->
-    <joint name="chassis_joint" type="fixed">
-        <origin xyz="-0.1 0.0 0.0" rpy="0.0 0.0 0.0"/>
-        <parent link="base_link"/>
-        <child link="chassis"/>
-    </joint>
+        <!-- Joint -->
+        <joint name="front_left_steering_joint" type="revolute">
+            <origin xyz="0.1 0.07 -0.1" rpy="0 0 0"/>
+            <parent link="chassis_link"/>
+            <child link="front_left_steering_link"/>
+            <axis xyz="0 0 1"/>
+            <limit lower="-0.523598767" upper="0.523598767" effort="1000" velocity="1.0" />
+        </joint>
 
-    <link name="chassis">
-        <visual name="">
-            <origin xyz="0.1 0.0 -0.05" rpy="0.0 0.0 1.57"/>
-            <geometry>
-                <mesh filename="file://$(find ${description_package})/meshes/limo_base.dae"/>
-            </geometry>
-            <!-- <material name="white"/> -->
-        </visual>
-        <collision>
-            <origin xyz="0.075 0.0 0.045" rpy="0.0 0.0 0.0"/>
-            <geometry>
-                <box size="0.15 0.13 0.1"/>
-            </geometry>
-        </collision>
-        <xacro:inertial_box mass="5.5" x="0.2" y="0.13" z="0.1">
-             <origin xyz="0.1 0 0.045" rpy="0 0 0"/>
-        </xacro:inertial_box>
-    </link>
+    <!-- Front Left Wheel -->
+        <!-- Link -->
+        <link name="front_left_wheel_link">
+            <visual>
+              <origin xyz="0 0 0" rpy="0 0 0"/>
+              <geometry>
+                  <mesh filename="file://$(find robot_description)/meshes/limo_optimal_wheels.dae" scale="1 1 1"/>
+              </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0.005 0" rpy="1.57 0 0"/>
+                <geometry>
+                    <cylinder radius="0.045" length="0.01"/>
+                </geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="0.25" length="0.01" radius="0.045">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+            </xacro:inertial_cylinder>
+        </link>
 
-    <!-- <gazebo reference="chassis">
-        <material>Gazebo/White</material>
-    </gazebo> -->
-
-    <!-- front left wheel -->
-    <link name="front_left_wheel_joint_link">
-        <inertial>
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-            <mass value="0.1"/>
-            <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
-        </inertial>
-    </link>
-
-    <joint name="front_left_steering_joint" type="revolute">
-        <origin xyz="0.1 0.07 0.0" rpy="0.0 0.0 0.0"/>
-        <parent link="base_link"/>
-        <child link="front_left_wheel_joint_link"/>
-        <axis xyz="0.0 0.0 1.0"/>
-        <limit lower="-0.7854" upper="0.7854" effort="10.0" velocity="3.0"/>
-    </joint>
-
-    <link name="front_left_wheel_link">
-        <visual name="">
-            <origin xyz="0.0 0.0 -0.005" rpy="1.57 0.0 0.0"/>
-            <geometry>
-                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
-            </geometry>
-            <!-- <material name="blue"/> -->
-        </visual>
-        <collision>
-            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
-            <geometry>
-                <cylinder radius="0.045" length="0.01"/>
-            </geometry>
-        </collision>
-        <xacro:inertial_cylinder mass="0.1" length="0.01" radius="0.045">
+        <!-- Joint -->
+        <joint name="front_left_wheel_joint" type="continuous">
             <origin xyz="0 0 0" rpy="0 0 0"/>
-        </xacro:inertial_cylinder>
-    </link>
+            <parent link="front_left_steering_link"/>
+            <child link="front_left_wheel_link"/>
+            <axis xyz="0 1 0"/>
+            <limit effort="100.0" velocity="10.0"/>
+        </joint>
 
-    <joint name="front_left_wheel" type="continuous">
-        <origin xyz="0.0 0.0 0.0" rpy="-1.57 0.0 0.0"/>
-        <parent link="front_left_wheel_joint_link"/>
-        <child link="front_left_wheel_link"/>
-        <axis xyz="0.0 0.0 1.0"/>
-    </joint>
+    <!-- Front Right Steering -->
+        <!-- Link -->
+        <link name="front_right_steering_link">
+            <inertial>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <mass value="0.1"/>
+                <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
+            </inertial>
+        </link>
+        
+        <!-- Joint -->
+        <joint name="front_right_steering_joint" type="revolute">
+            <origin xyz="0.1 -0.07 -0.1" rpy="3.14159 0 0"/>
+            <parent link="chassis_link"/>
+            <child link="front_right_steering_link"/>
+            <axis xyz="0 0 -1"/>
+            <limit lower="-0.523598767" upper="0.523598767" effort="1000" velocity="1.0" />
+        </joint>
+        
+    <!-- Front Right Wheel -->
+        <!-- Link -->
+        <link name="front_right_wheel_link">
+            <visual>
+              <origin xyz="0 0 0" rpy="0 0 0" />
+              <geometry>
+                  <mesh filename="file://$(find robot_description)/meshes/limo_optimal_wheels.dae" scale="1 1 1"/>
+              </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0.005 0" rpy="1.57 0 0"/>
+                <geometry>
+                    <cylinder radius="0.045" length="0.01"/>
+                </geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="0.25" length="0.01" radius="0.045">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+            </xacro:inertial_cylinder>
+        </link>
 
-    <!-- <gazebo reference="front_left_wheel_link">
-        <material>Gazebo/Blue</material>
-    </gazebo> -->
-
-    <!-- front right wheel -->
-    <link name="front_right_wheel_joint_link">
-        <inertial>
-            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
-            <mass value="0.1"/>
-            <inertia ixx="0.01" ixy="0.0" ixz="0.0" iyy="0.01" iyz="0.0" izz="0.01"/>
-        </inertial>
-    </link>
-
-    <joint name="front_right_steering_joint" type="revolute">
-        <origin xyz="0.1 -0.07 0.0" rpy="0.0 0.0 0.0"/>
-        <parent link="base_link"/>
-        <child link="front_right_wheel_joint_link"/>
-        <axis xyz="0.0 0.0 1.0"/>
-        <limit lower="-0.785" upper="0.785" effort="10.0" velocity="3.0"/>
-    </joint>
-
-    <link name="front_right_wheel_link">
-        <visual name="">
-            <origin xyz="0.0 0.0 -0.005" rpy="1.57 0.0 0.0"/>
-            <geometry>
-                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
-            </geometry>
-            <!-- <material name="blue"/> -->
-        </visual>
-        <collision>
-            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
-            <geometry>
-                <cylinder radius="0.045" length="0.01"/>
-            </geometry>
-        </collision>
-        <xacro:inertial_cylinder mass="0.1" length="0.01" radius="0.045">
+        <!-- Joint -->
+        <joint name="front_right_wheel_joint" type="continuous">
             <origin xyz="0 0 0" rpy="0 0 0"/>
-        </xacro:inertial_cylinder>
-    </link>
+            <parent link="front_right_steering_link"/>
+            <child link="front_right_wheel_link"/>
+            <axis xyz="0 -1 0"/>
+            <limit effort="100.0" velocity="10.0"/>
+        </joint>
 
-    <joint name="front_right_wheel" type="continuous">
-        <origin xyz="0.0 0.0 0.0" rpy="1.57 0.0 0.0"/>
-        <parent link="front_right_wheel_joint_link"/>
-        <child link="front_right_wheel_link"/>
-        <axis xyz="0.0 0.0 -1.0"/>
-    </joint>
+    <!-- Back Left Wheel -->
+        <!-- Link -->
+        <link name="back_left_wheel_link">
+            <visual>
+              <origin xyz="0 0 0" rpy="0 0 0"/>
+              <geometry>
+                  <mesh filename="file://$(find robot_description)/meshes/limo_optimal_wheels.dae" scale="1 1 1"/>
+              </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0.005 0" rpy="1.57 0 0"/>
+                <geometry>
+                    <cylinder radius="0.045" length="0.01"/>
+                </geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="0.25" length="0.01" radius="0.045">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+            </xacro:inertial_cylinder>
+        </link>
 
-    <!-- <gazebo reference="front_right_wheel_link">
-        <material>Gazebo/Blue</material>
-    </gazebo> -->
+        <!-- Joint -->
+        <joint name="back_left_wheel_joint" type="continuous">
+            <origin xyz="-0.1 0.07 -0.1" rpy="0 0.0 0.0"/>
+            <parent link="chassis_link"/>
+            <child link="back_left_wheel_link"/>
+            <axis xyz="0 1 0"/>
+            <limit effort="100.0" velocity="10.0"/>
+        </joint>
 
-    <!-- back left wheel -->
-    <joint name="back_left_wheel" type="continuous">
-        <origin xyz="-0.1 0.07 0.0" rpy="-1.57 0.0 0.0"/>
-        <parent link="base_link"/>
-        <child link="back_left_wheel_link"/>
-        <axis xyz="0.0 0.0 1.0"/>
-    </joint>
+    <!-- Back Right Wheel -->
+        <!-- Link -->
+        <link name="back_right_wheel_link">
+            <visual>
+              <origin xyz="0 0 0" rpy="0 0 0"/>
+              <geometry>
+                  <mesh filename="file://$(find robot_description)/meshes/limo_optimal_wheels.dae" scale="1 1 1"/>
+              </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0.005 0" rpy="1.57 0 0"/>
+                <geometry>
+                    <cylinder radius="0.045" length="0.01"/>
+                </geometry>
+            </collision>
+            <xacro:inertial_cylinder mass="0.25" length="0.01" radius="0.045">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+            </xacro:inertial_cylinder>
+        </link>
 
-    <link name="back_left_wheel_link">
-        <visual name="">
-            <origin xyz="0 0 -0.005" rpy="1.57 0 0"/>
-            <geometry>
-                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
-            </geometry>
-            <!-- <material name="black"/> -->
-        </visual>
-        <collision>
-            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
-            <geometry>
-                <cylinder radius="0.045" length="0.01"/>
-            </geometry>
-        </collision>
-        <xacro:inertial_cylinder mass="0.1" length="0.01" radius="0.045">
-            <origin xyz="0 0 0" rpy="0 0 0"/>
-        </xacro:inertial_cylinder>
-    </link>
-
-    <!-- <gazebo reference="back_left_wheel_link">
-        <material>Gazebo/Black</material>
-    </gazebo> -->
-
-    <!-- back right wheel -->
-    <joint name="back_right_wheel" type="continuous">
-        <origin xyz="-0.1 -0.07 0" rpy="1.57 0 0" />
-        <parent link="base_link"/>
-        <child link="back_right_wheel_link"/>
-        <axis xyz="0.0 0.0 -1.0"/>
-        <limit lower="0.0" upper="0.0" effort="0.0" velocity="0.0"/>
-    </joint>
-
-    <link name="back_right_wheel_link">
-        <visual name="">
-            <origin xyz="0 0 -0.005" rpy="1.57 0 0"/>
-            <geometry>
-                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
-            </geometry>
-            <!-- <material name="black"/> -->
-        </visual>
-        <collision>
-            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
-            <geometry>
-                <cylinder radius="0.045" length="0.01"/>
-            </geometry>
-        </collision>
-        <xacro:inertial_cylinder mass="0.1" length="0.01" radius="0.045">
-            <origin xyz="0 0 0" rpy="0 0 0"/>
-        </xacro:inertial_cylinder>
-    </link>
-
-    <!-- <gazebo reference="back_right_wheel_link">
-        <material>Gazebo/Black</material>
-    </gazebo> -->
+        <!-- Joint -->
+        <joint name="back_right_wheel_joint" type="continuous">
+            <origin xyz="-0.1 -0.07 -0.1" rpy="3.14159 0 0"/>
+            <parent link="chassis_link"/>
+            <child link="back_right_wheel_link"/>
+            <axis xyz="0 -1 0"/>
+            <limit effort="100.0" velocity="10.0"/>
+        </joint>
 
 </robot>

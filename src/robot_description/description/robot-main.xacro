@@ -3,11 +3,6 @@
 
     <xacro:property name="description_package" value="robot_description"/>
 
-    <!-- <xacro:include filename="$(find robot_description)/description/robot_core.urdf.xacro"/> -->
     <xacro:include filename="$(find robot_description)/description/limo_core.urdf.xacro"/>
     <xacro:include filename="$(find robot_description)/description/gazebo_control.xacro"/>
-    <!-- <xacro:include filename="$(find robot_description)/description/camera.xacro"/> -->
-    <!-- <xacro:include filename="$(find robot_description)/description/lidar.xacro"/> -->
-    <!-- <xacro:include filename="$(find robot_description)/description/imu.xacro"/> -->
-        
 </robot>

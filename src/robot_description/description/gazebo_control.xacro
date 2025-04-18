@@ -1,20 +1,23 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="otto">
-    <gazebo>
-         <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
-            <parameters>$(find robot_description)/config/robot_controllers.yaml</parameters>
-        </plugin>
-    </gazebo>
-
-    <gazebo>
+     <!-- <gazebo>
         <plugin name="ground_truth_plugin" filename="libgazebo_ros_p3d.so">
             <ros>
                 <namespace>/ground_truth</namespace>
                 <remapping>odom:=pose</remapping>
             </ros>
-            <body_name>base_link</body_name>
-            <frameName>odom</frameName>
+            <body_name>base_footprint</body_name>
+            <frameName>world</frameName>
             <updateRate>100.0</updateRate>
+        </plugin>
+    </gazebo> -->
+
+    <!-- ROS2 Control -->
+
+    <gazebo>
+    <!-- <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control"> -->
+        <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+            <parameters>$(find robot_description)/config/robot_controllers.yaml</parameters>
         </plugin>
     </gazebo>
 
@@ -23,67 +26,7 @@
             <plugin>gazebo_ros2_control/GazeboSystem</plugin>
         </hardware>
 
-        <!-- front_left_wheel -->
-        <joint name="front_left_wheel">
-            <command_interface name="velocity">
-                <param name="min">-5</param>
-                <param name="max">5</param>
-            </command_interface>
-            <state_interface name="position">
-                <param name="initial_value">0.0</param>
-            </state_interface>
-            <state_interface name="velocity">
-                <param name="initial_value">0.0</param>
-            </state_interface>
-            <state_interface name="effort"/>
-        </joint>
-
-        <!-- front_right_wheel -->
-        <joint name="front_right_wheel">
-            <command_interface name="velocity">
-                <param name="min">-5</param>
-                <param name="max">5</param>
-            </command_interface>
-            <state_interface name="position">
-                <param name="initial_value">0.0</param>
-            </state_interface>
-            <state_interface name="velocity">
-                <param name="initial_value">0.0</param>
-            </state_interface>
-            <state_interface name="effort"/>
-        </joint>
-
-        <!-- back_left_wheel -->
-        <joint name="back_left_wheel">
-            <command_interface name="velocity">
-                <param name="min">-5</param>
-                <param name="max">5</param>
-            </command_interface>
-            <state_interface name="position">
-                <param name="initial_value">0.0</param>
-            </state_interface>
-            <state_interface name="velocity">
-                <param name="initial_value">0.0</param>
-            </state_interface>
-            <state_interface name="effort"/>
-        </joint>
-
-        <!-- back_right_wheel -->
-        <joint name="back_right_wheel">
-            <command_interface name="velocity">
-                <param name="min">-5</param>
-                <param name="max">5</param>
-            </command_interface>
-            <state_interface name="position">
-                <param name="initial_value">0.0</param>
-            </state_interface>
-            <state_interface name="velocity">
-                <param name="initial_value">0.0</param>
-            </state_interface>
-            <state_interface name="effort"/>
-        </joint>
-
-        <!-- front_left_steering_joint -->
+        <!-- Front Left Steering -->
         <joint name="front_left_steering_joint">
             <command_interface name="position">
                 <param name="min">-0.523598767</param>
@@ -98,7 +41,7 @@
             <state_interface name="effort"/>
         </joint>
 
-        <!-- front_right_steering_joint -->
+        <!-- Front Right Steering -->
         <joint name="front_right_steering_joint">
             <command_interface name="position">
                 <param name="min">-0.523598767</param>
@@ -112,10 +55,71 @@
             </state_interface>
             <state_interface name="effort"/>
         </joint>
+
+        <!-- Front Left Wheel -->
+        <joint name="front_left_wheel_joint">
+            <command_interface name="velocity">
+                <param name="min">-5</param>
+                <param name="max">5</param>
+            </command_interface>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="effort"/>
+        </joint>
+
+        <!-- Front Right Wheel -->
+        <joint name="front_right_wheel_joint">
+            <command_interface name="velocity">
+                <param name="min">-5</param>
+                <param name="max">5</param>
+            </command_interface>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="effort"/>
+        </joint>
+
+        <!-- Back Left Wheel -->
+        <joint name="back_left_wheel_joint">
+            <command_interface name="velocity">
+                <param name="min">-5</param>
+                <param name="max">5</param>
+            </command_interface>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="effort"/>
+        </joint>
+
+        <!-- Back Right Wheel -->
+        <joint name="back_right_wheel_joint">
+            <command_interface name="velocity">
+                <param name="min">-5</param>
+                <param name="max">5</param>
+            </command_interface>
+            <state_interface name="position">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="velocity">
+                <param name="initial_value">0.0</param>
+            </state_interface>
+            <state_interface name="effort"/>
+        </joint>
+
     </ros2_control>
 
-    <!-- base_link -->
-    <gazebo reference="base_link">
+    <!-- Base Footprint Link -->
+    <gazebo reference="base_footprint">
         <mu1>10</mu1>
         <mu2>10</mu2>
         <kp>10000000.0</kp>
@@ -126,7 +130,7 @@
     </gazebo>
 
     <!-- Chassis -->
-    <gazebo reference="chassis">
+    <gazebo reference="chassis_link">
         <mu1>10</mu1>
         <mu2>10</mu2>
         <kp>10000000.0</kp>
@@ -136,32 +140,32 @@
         <maxContacts value="64"/>
     </gazebo>
 
-    <!-- front_left_wheel -->
-    <gazebo reference="front_left_wheel">
+    <!-- Front Left Wheel -->
+    <gazebo reference="front_left_wheel_link">
         <mu1>0.5</mu1>
         <mu2>0.5</mu2>
         <kp>1000.0</kp>
         <kd>1000.0</kd>
     </gazebo>
 
-    <!-- front_right_wheel -->
-    <gazebo reference="front_right_wheel">
+    <!-- Front Right Wheel -->
+    <gazebo reference="front_right_wheel_link">
         <mu1>0.5</mu1>
         <mu2>0.5</mu2>
         <kp>1000.0</kp>
         <kd>1000.0</kd>
     </gazebo>
 
-    <!-- back_left_wheel -->
-    <gazebo reference="back_left_wheel">
+    <!-- Back Left Wheel -->
+    <gazebo reference="back_left_wheel_link">
         <mu1>0.5</mu1>
         <mu2>0.5</mu2>
         <kp>1000.0</kp>
         <kd>1000.0</kd>
     </gazebo>
 
-    <!-- back_right_wheel -->
-    <gazebo reference="back_right_wheel">
+    <!-- Back Right Wheel -->
+    <gazebo reference="back_right_wheel_link">
         <mu1>0.5</mu1>
         <mu2>0.5</mu2>
         <kp>1000.0</kp>

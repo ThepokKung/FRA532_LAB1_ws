@@ -12,9 +12,10 @@ from launch_ros.substitutions import FindPackageShare
 import launch_ros.actions
 import xacro
 
+
 def generate_launch_description():
     launch_description = LaunchDescription()
-    package_name = "limo_model"
+    package_name = "robot_description"
 
     # Spawn the robot in the world
     spawn_x_val = '9.0'
@@ -23,23 +24,29 @@ def generate_launch_description():
     spawn_yaw_val = '1.57'
 
     rsp = IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                [
-                    os.path.join(
-                        get_package_share_directory(package_name),
-                        "launch",
-                        "limo_description.launch.py"
-                    )
-                ]
-            ),
-            launch_arguments={"use_sim_time":"true"}.items()
-        )
-    
+        PythonLaunchDescriptionSource(
+            [
+                os.path.join(
+                    get_package_share_directory(package_name),
+                    "launch",
+                    "rsp.launch.py"
+                )
+            ]
+        ),
+        launch_arguments={"use_sim_time": "true"}.items()
+    )
+
+    robot_controllers_file = os.path.join(
+        get_package_share_directory(package_name),
+        'config',
+        'robot_controllers.yaml'
+    )
+
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [
                 os.path.join(
-                    get_package_share_directory('limo_world'),
+                    get_package_share_directory('robot_world'),
                     "launch",
                     "world.launch.py"
                 )
@@ -50,7 +57,7 @@ def generate_launch_description():
     spawn_entity = Node(
         package='ros_gz_sim',
         executable='create',
-        arguments=['-entity', 'limo', 
+        arguments=['-entity', 'limo',
                    '-topic', 'robot_description',
                    '-x', spawn_x_val,
                    '-y', spawn_y_val,
@@ -64,35 +71,86 @@ def generate_launch_description():
         'rviz',
         'display.rviz'
     )
+
     rviz = Node(
         package="rviz2",
         executable="rviz2",
         arguments=[
             "-d", rviz_file_path
         ],
-        output = "screen"
+        output="screen"
     )
 
+    # joint_state_broadcaster_spawner = Node(
+    #     package="controller_manager",
+    #     executable="spawner",
+    #     arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
+    #     output="screen"
+    # )
+
+    # joint_state_broadcaster_spawner = Node(
+    #     package="controller_manager",
+    #     executable="spawner",
+    #     arguments=["joint_state_broadcaster"],
+    # )
+
     joint_state_broadcaster_spawner = Node(
-            package="controller_manager",
-            executable="spawner",
-            arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
-            parameters=[{"use_sim_time": True}]
-        )
+        package="controller_manager",
+        executable="spawner",
+        arguments=["joint_state_broadcaster",
+                   "--controller-manager", "/controller_manager",
+                   "--ros-args", "--params-file", robot_controllers_file],
+        output="screen"
+    )
+
+    # velocity_controller_spawner = Node(
+    #     package="controller_manager",
+    #     executable="spawner",
+    #     arguments=["velocity_controllers",
+    #                "--controller-manager", "/controller_manager"],
+    #     output="screen"
+    # )
+
+    # velocity_controller_spawner = Node(
+    #     package="controller_manager",
+    #     executable="spawner",
+    #     arguments=["velocity_controllers",],
+    #     output="screen"
+    # )
 
     velocity_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["velocity_controllers", "--controller-manager", "/controller_manager"],
-        parameters=[{"use_sim_time": True}]
+        arguments=["velocity_controllers",
+                   "--controller-manager", "/controller_manager",
+                   "--ros-args", "--params-file", robot_controllers_file],
+        output="screen"
     )
+
+    # steering_controller_spawner = Node(
+    #     package="controller_manager",
+    #     executable="spawner",
+    #     arguments=["steering_controller",
+    #                "--controller-manager", "/controller_manager"],
+    #     output="screen"
+    # )
+
+    # steering_controller_spawner = Node(
+    #     package="controller_manager",
+    #     executable="spawner",
+    #     arguments=["steering_controller"],
+    #     output="screen"
+    # )
 
     steering_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["steering_controller", "--controller-manager", "/controller_manager"],
-        parameters=[{"use_sim_time": True}]
+        arguments=["steering_controller", 
+                   "--controller-manager", "/controller_manager",
+                   "--ros-args", "--params-file", robot_controllers_file],
+        output="screen"
     )
+
     launch_description.add_action(
         RegisterEventHandler(
             event_handler=OnProcessExit(
