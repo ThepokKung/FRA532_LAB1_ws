@@ -47,7 +47,9 @@ install(TARGETS
 
 ################ INSTALL LAUNCH, ETC #################
 install(DIRECTORY
-  # add directories here
+  world
+  launch
+  models
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()
