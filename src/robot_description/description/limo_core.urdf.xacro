@@ -2,21 +2,6 @@
     <!-- Import the inertial macros -->
     <xacro:include filename="inertial_macros.xacro"/>
 
-    <!-- COLOR NAME  -->
-    <material name="white">
-        <color rgba="1 1 1 1" />
-    </material>
-    <material name="black">
-        <color rgba="0 0 0 1"/>
-    </material>
-    <material name="blue">
-        <color rgba="0 0 1 1"/>
-    </material>
-    <material name="red">
-        <color rgba="1 0 0 1"/>
-    </material>
-
-
     <!-- base link -->
     <link name="base_link"/>
 
@@ -31,7 +16,7 @@
         <visual name="">
             <origin xyz="0.1 0.0 -0.05" rpy="0.0 0.0 1.57"/>
             <geometry>
-                <mesh filename="file://$(find ${description_package})/meshes/limo_base.dae"/>
+                <mesh filename="file://$(find ${description_package})/meshes/limo_optimal.dae"/>
             </geometry>
             <!-- <material name="white"/> -->
         </visual>
@@ -41,8 +26,8 @@
                 <box size="0.15 0.13 0.1"/>
             </geometry>
         </collision>
-        <xacro:inertial_box mass="5.5" x="0.2" y="0.13" z="0.1">
-             <origin xyz="0.1 0 0.045" rpy="0 0 0"/>
+        <xacro:inertial_box mass="2.0" x="0.2" y="0.13" z="0.1">
+            <origin xyz="0 0 0" rpy="0 0 0"/>
         </xacro:inertial_box>
     </link>
 
@@ -71,17 +56,15 @@
         <visual name="">
             <origin xyz="0.0 0.0 -0.005" rpy="1.57 0.0 0.0"/>
             <geometry>
-                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
+                <mesh filename="file://$(find ${description_package})/meshes/limo_optimal_wheels.dae"/>
             </geometry>
-            <!-- <material name="blue"/> -->
         </visual>
         <collision>
-            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
             <geometry>
                 <cylinder radius="0.045" length="0.01"/>
             </geometry>
         </collision>
-        <xacro:inertial_cylinder mass="0.1" length="0.01" radius="0.045">
+        <xacro:inertial_cylinder mass="0.25" length="0.01" radius="0.045">
             <origin xyz="0 0 0" rpy="0 0 0"/>
         </xacro:inertial_cylinder>
     </link>
@@ -92,10 +75,6 @@
         <child link="front_left_wheel_link"/>
         <axis xyz="0.0 0.0 1.0"/>
     </joint>
-
-    <!-- <gazebo reference="front_left_wheel_link">
-        <material>Gazebo/Blue</material>
-    </gazebo> -->
 
     <!-- front right wheel -->
     <link name="front_right_wheel_joint_link">
@@ -118,17 +97,15 @@
         <visual name="">
             <origin xyz="0.0 0.0 -0.005" rpy="1.57 0.0 0.0"/>
             <geometry>
-                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
+                <mesh filename="file://$(find ${description_package})/meshes/limo_optimal_wheels.dae"/>
             </geometry>
-            <!-- <material name="blue"/> -->
         </visual>
         <collision>
-            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
             <geometry>
                 <cylinder radius="0.045" length="0.01"/>
             </geometry>
         </collision>
-        <xacro:inertial_cylinder mass="0.1" length="0.01" radius="0.045">
+        <xacro:inertial_cylinder mass="0.25" length="0.01" radius="0.045">
             <origin xyz="0 0 0" rpy="0 0 0"/>
         </xacro:inertial_cylinder>
     </link>
@@ -139,10 +116,6 @@
         <child link="front_right_wheel_link"/>
         <axis xyz="0.0 0.0 -1.0"/>
     </joint>
-
-    <!-- <gazebo reference="front_right_wheel_link">
-        <material>Gazebo/Blue</material>
-    </gazebo> -->
 
     <!-- back left wheel -->
     <joint name="back_left_wheel" type="continuous">
@@ -156,24 +129,17 @@
         <visual name="">
             <origin xyz="0 0 -0.005" rpy="1.57 0 0"/>
             <geometry>
-                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
+                <mesh filename="file://$(find ${description_package})/meshes/limo_optimal_wheels.dae"/>
             </geometry>
-            <!-- <material name="black"/> -->
         </visual>
-        <collision>
-            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
-            <geometry>
+        <collision>            <geometry>
                 <cylinder radius="0.045" length="0.01"/>
             </geometry>
         </collision>
-        <xacro:inertial_cylinder mass="0.1" length="0.01" radius="0.045">
+        <xacro:inertial_cylinder mass="0.25" length="0.01" radius="0.045">
             <origin xyz="0 0 0" rpy="0 0 0"/>
         </xacro:inertial_cylinder>
     </link>
-
-    <!-- <gazebo reference="back_left_wheel_link">
-        <material>Gazebo/Black</material>
-    </gazebo> -->
 
     <!-- back right wheel -->
     <joint name="back_right_wheel" type="continuous">
@@ -188,23 +154,17 @@
         <visual name="">
             <origin xyz="0 0 -0.005" rpy="1.57 0 0"/>
             <geometry>
-                <mesh filename="file://$(find ${description_package})/meshes/limo_wheel.dae"/>
+                <mesh filename="file://$(find ${description_package})/meshes/limo_optimal_wheels.dae"/>
             </geometry>
-            <!-- <material name="black"/> -->
         </visual>
         <collision>
-            <!-- <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/> -->
             <geometry>
                 <cylinder radius="0.045" length="0.01"/>
             </geometry>
         </collision>
-        <xacro:inertial_cylinder mass="0.1" length="0.01" radius="0.045">
+        <xacro:inertial_cylinder mass="0.25" length="0.01" radius="0.045">
             <origin xyz="0 0 0" rpy="0 0 0"/>
         </xacro:inertial_cylinder>
     </link>
-
-    <!-- <gazebo reference="back_right_wheel_link">
-        <material>Gazebo/Black</material>
-    </gazebo> -->
 
 </robot>

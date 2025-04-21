@@ -116,46 +116,56 @@
 
     <!-- base_link -->
     <gazebo reference="base_link">
-        <minDepth>0.0002</minDepth>
-        <kp value="1000000.0"/>
-        <kd value="100.0"/>
-        <material>Gazebo/Green</material>
+        <mu1>10</mu1>
+        <mu2>10</mu2>
+        <kp>10000000.0</kp>
+        <kd>1.0</kd>
+        <minDepth>0.01</minDepth>
+        <fdir1>1 0 0</fdir1>
+        <maxContacts value="64"/>
+    </gazebo>
+
+    <!-- Chassis -->
+    <gazebo reference="chassis">
+        <mu1>10</mu1>
+        <mu2>10</mu2>
+        <kp>10000000.0</kp>
+        <kd>1.0</kd>
+        <minDepth>0.01</minDepth>
+        <fdir1>1 0 0</fdir1>
+        <maxContacts value="64"/>
     </gazebo>
 
     <!-- front_left_wheel -->
     <gazebo reference="front_left_wheel">
-        <mu1>10.0</mu1>
-        <mu2>10.0</mu2>
-        <minDepth>0.0002</minDepth>
-        <kp value="1000000.0"/>
-        <kd value="100.0"/>
+        <mu1>0.5</mu1>
+        <mu2>0.5</mu2>
+        <kp>1000.0</kp>
+        <kd>1000.0</kd>
     </gazebo>
 
     <!-- front_right_wheel -->
     <gazebo reference="front_right_wheel">
-        <mu1>10.0</mu1>
-        <mu2>10.0</mu2>
-        <minDepth>0.0002</minDepth>
-        <kp value="1000000.0"/>
-        <kd value="100.0"/>
+        <mu1>0.5</mu1>
+        <mu2>0.5</mu2>
+        <kp>1000.0</kp>
+        <kd>1000.0</kd>
     </gazebo>
 
     <!-- back_left_wheel -->
     <gazebo reference="back_left_wheel">
-        <mu1>10.0</mu1>
-        <mu2>10.0</mu2>
-        <minDepth>0.0002</minDepth>
-        <kp value="1000000.0"/>
-        <kd value="100.0"/>
+        <mu1>0.5</mu1>
+        <mu2>0.5</mu2>
+        <kp>1000.0</kp>
+        <kd>1000.0</kd>
     </gazebo>
 
     <!-- back_right_wheel -->
     <gazebo reference="back_right_wheel">
-        <mu1>10.0</mu1>
-        <mu2>10.0</mu2>
-        <minDepth>0.0002</minDepth>
-        <kp value="1000000.0"/>
-        <kd value="100.0"/>
+        <mu1>0.5</mu1>
+        <mu2>0.5</mu2>
+        <kp>1000.0</kp>
+        <kd>1000.0</kd>
     </gazebo>
 
 </robot>
