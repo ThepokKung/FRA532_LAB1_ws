@@ -138,7 +138,7 @@ class PathTrackingStanleyController(Node):
 
         # Stanley Controller
         # Use constant speed (v_const) for computing cross-track steering term.
-        v_const = self.kp_v  # Alternatively, set a different constant speed if needed
+        v_const = self.Kp_v  # Alternatively, set a different constant speed if needed
         # Compute cross-track error by projecting the error vector onto a vector perpendicular to current heading.
         perp_angle = self.current_yaw + math.pi / 2.0
         cross_track_error = np.dot(np.array([math.cos(perp_angle), math.sin(perp_angle)]),np.array([error_x, error_y]))

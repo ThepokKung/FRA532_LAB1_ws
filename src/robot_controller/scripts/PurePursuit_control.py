@@ -5,7 +5,7 @@ PathTrackingPurePursuit - Pure Pursuit Path Tracking Controller for Ackermann St
 This node:
   - Loads a planned path from a YAML file.
   - Subscribes to the /ground_truth/pose topic.
-  - Uses a pure pursuit style controller (using proportional gains) to drive toward the current target waypoint.
+  - Uses a pure pursuit style controller to drive toward the current target waypoint.
   - Publishes the velocity command on the cmd_vel topic.
 
 Assumptions:
@@ -47,28 +47,25 @@ class PathTrackingPurePursuit(Node):
             self.path = []
 
         # --- Controller Parameters ---
-        self.declare_parameter('lookahead_distance', 2.0)
-        self.declare_parameter('Kp_v', 1.0)
-        self.declare_parameter('Kp_omega', 0.1)
-        self.declare_parameter('switch_threshold', 1.0)
-        self.declare_parameter('max_speed', 1.0)
+        self.declare_parameter('lookahead_distance', 0.5)
+        self.declare_parameter('K_dd', 1.0)
+        self.declare_parameter('min_ld', 0.5)
+        self.declare_parameter('max_ld', 2.0)
+        self.declare_parameter('linear_velo_pure', 0.5)
+        self.declare_parameter('wheelbase', 0.3)
+        
         self.lookahead_distance = self.get_parameter('lookahead_distance').value
-        self.Kp_v = self.get_parameter('Kp_v').value  
-        self.Kp_omega = self.get_parameter('Kp_omega').value
-        self.max_speed = self.get_parameter('max_speed').value
+        self.K_dd = self.get_parameter('K_dd').value  
+        self.min_ld = self.get_parameter('min_ld').value
+        self.max_ld = self.get_parameter('max_ld').value
+        self.linear_velo_pure = self.get_parameter('linear_velo_pure').value
+        self.wheelbase = self.get_parameter('wheelbase').value
 
         # --- Internal State ---
-        self.path_index = 0
-        self.current_x = 0.0
-        self.current_y = 0.0
-        self.current_yaw = 0.0
-        self.last_distance_error = float('inf')
-
-        # Set initial target waypoint (if path is not empty)
-        if self.path:
-            self.update_target()
-        else:
-            self.get_logger().warn("Path is empty; no target waypoint available.")
+        self.current_target_idx = 0
+        self.robot_x = 0.0
+        self.robot_y = 0.0
+        self.robot_yaw = 0.0
 
         # --- ROS Interfaces ---
         self.create_subscription(Odometry, '/ground_truth/pose', self.odom_callback, 10)
@@ -78,66 +75,71 @@ class PathTrackingPurePursuit(Node):
         self.get_logger().info("🚀 Pure Pursuit Tracking Node Initialized")
 
     def odom_callback(self, msg: Odometry):
-        self.current_x = msg.pose.pose.position.x
-        self.current_y = msg.pose.pose.position.y
+        self.robot_x = msg.pose.pose.position.x
+        self.robot_y = msg.pose.pose.position.y
         orientation = msg.pose.pose.orientation
         q = [orientation.x, orientation.y, orientation.z, orientation.w]
         _, _, yaw = euler_from_quaternion(q)
-        self.current_yaw = yaw
+        self.robot_yaw = yaw
 
-    def update_target(self):
-        """Update the target waypoint using the current path index."""
-        wp = self.path[self.path_index]
-        self.target_x = wp.get('x', 0.0)
-        self.target_y = wp.get('y', 0.0)
-        self.target_yaw = wp.get('yaw', 0.0)
-
-    def publish_cmd(self, linear: float, angular: float):
+    def pub_cmd(self, linear: float, angular: float):
         """Publish the Twist command message."""
         cmd = Twist()
         cmd.linear.x = linear
         cmd.angular.z = angular
         self.cmd_vel_publisher.publish(cmd)
 
+    def normalize_angle(self, angle):
+        """Normalize an angle to [-pi, pi]."""
+        return math.atan2(math.sin(angle), math.cos(angle))
+
     def control_loop(self):
-        # Compute error between current pose and target waypoint
-        error_x = self.target_x - self.current_x
-        error_y = self.target_y - self.current_y
-        distance_error = math.hypot(error_x, error_y)
-        desired_heading = math.atan2(error_y, error_x)
-        heading_error = normalize_angle(desired_heading - self.current_yaw)
+        if self.current_target_idx >= len(self.path):
+            # self.current_target_idx = 0  # Reset index to loop the path
+            self.pub_cmd(0.0, 0.0)
+            self.get_logger().info("🏁 Path tracking completed.")
+            return # Stop
+        
+        # Search nearest point index
+        # self.serch_nearest_point_index()
 
-        self.get_logger().debug(f"Distance error: {distance_error:.2f}, Heading error: {math.degrees(heading_error):.2f}°")
+        # Implement Here
+        target = self.path[self.current_target_idx]
+        target_x, target_y = target['x'], target['y']
 
-        # Check if current target is reached (using distance error)
+        # Distance Calculation
+        dx = target_x - self.robot_x
+        dy = target_y - self.robot_y
+        distance_error = math.hypot(dx, dy)
+
+        # If distance < lookahead_distance, it moves to the next waypoint.
         if distance_error < self.lookahead_distance:
-            if self.path_index + 1 < len(self.path):
-                self.path_index += 1
-                self.update_target()
-                self.get_logger().info(f"✅ Reached waypoint {self.path_index - 1}, moving to waypoint {self.path_index}")
-            else:
-                self.publish_cmd(0.0, 0.0)
-                self.get_logger().info("🏁 Path tracking completed.")
-                return
+            self.current_target_idx += 1
+            self.get_logger().info(f"✅ Reached waypoint {self.current_target_idx - 1}, moving to waypoint {self.current_target_idx}")
 
-        # Pure pursuit control (proportional controller)
-        linear_cmd = self.Kp_v * distance_error
-        angular_cmd = self.Kp_omega * heading_error
+        # Heading Angle Calculation
+        target_yaw = math.atan2(dy, dx)
+        alpha = target_yaw - self.robot_yaw
+        # Normalize an angle to [-pi, pi]
+        alpha = self.normalize_angle(alpha)
 
-        # Limit commands
-        linear_cmd = np.clip(linear_cmd, -self.max_speed, self.max_speed)
-        angular_cmd = np.clip(angular_cmd, -self.max_speed, self.max_speed)
+        # Steering Angle Calculation (β)
+        self.lookahead_distance = np.clip(self.K_dd * self.linear_velo_pure, self.min_ld, self.max_ld)
+        beta = math.atan2(2 * self.wheelbase * math.sin(alpha) / self.lookahead_distance, 1.0)
+        beta = max(-0.6, min(beta, 0.6))
 
-        self.publish_cmd(linear_cmd, angular_cmd)
+        # Angular Velocity Calculation (ω)
+        angular_velocity = (self.linear_velo_pure * math.tan(beta)) / self.wheelbase
 
+        # Publish cmd_vel
+        self.pub_cmd(self.linear_velo_pure, angular_velocity)
+        
         # Log status
         self.get_logger().info(
-            f"Target: ({self.target_x:.2f}, {self.target_y:.2f}, yaw: {math.degrees(self.target_yaw):.1f}°) | "
-            f"Error: dist={distance_error:.2f}, heading={math.degrees(heading_error):.2f}° | "
-            f"Cmd: linear={linear_cmd:.2f}, angular={math.degrees(angular_cmd):.2f}°/s"
+            f"Target: ({target_x:.2f}, {target_y:.2f}) | "
+            f"Error: dist={distance_error:.2f}, alpha={math.degrees(alpha):.2f}° | "
+            f"Cmd: linear={self.linear_velo_pure:.2f}, angular={math.degrees(angular_velocity):.2f}°/s"
         )
-
-        self.last_distance_error = distance_error
 
 def main(args=None):
     rclpy.init(args=args)

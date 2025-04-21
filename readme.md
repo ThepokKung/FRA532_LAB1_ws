@@ -27,3 +27,7 @@ Controll with Controller Mode
 ```bash
 ros2 launch robot_controller robot_controller.launch.py control_mode:=pure_pursuit
 ```
+
+> [!WARNING]
+> When need to restart controller
+> Please restart simulation

@@ -21,7 +21,7 @@ def generate_launch_description():
     robot_con_share = get_package_share_directory('robot_controller')
     robot_sim_share = get_package_share_directory('robot_sim')
     rsp_file = os.path.join(robot_des_share, 'launch', 'rsp.launch.py')
-    rviz_file = os.path.join(robot_con_share, 'rviz', 'displaysim3.rviz')
+    rviz_file = os.path.join(robot_con_share, 'rviz', 'displaysim.rviz')
 
     rsp = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
