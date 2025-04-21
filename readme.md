@@ -2,6 +2,10 @@
 
 เดี่ยวมาเขียนต่อ
 
+Wait to fix
+* PurePrusite 
+* EKF
+
 ## Usage
 
 Run simulation it's has two mode on steering control mode
@@ -31,3 +35,4 @@ ros2 launch robot_controller robot_controller.launch.py control_mode:=pure_pursu
 > [!WARNING]
 > When need to restart controller
 > Please restart simulation
+
