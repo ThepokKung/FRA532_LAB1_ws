@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(robot_controller)
+project(robot_bringup)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -27,26 +27,10 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  scripts/InverKinematic-basic.py
-  scripts/InverKinematic-nscc.py
-  # scripts/ForwardKinematic-Double.py
-  # scripts/ForwardKinematic-Single.py
-  # scripts/ForwardKinematic-Yaw.py
-  scripts/ForwardKinematic-All.py
-  #Controller
-  scripts/PID_control.py
-  scripts/PurePursuit_control.py
-  # scripts/MPC_control.py
-  scripts/Stanley_control.py
-  #controller part3
-  # scripts/PID_control_part3.py
-  # scripts/PurePursuit_control_part3.py
-  #EKF
-  scripts/EKF-Single.py
-  scripts/EKF-Double.py
-  scripts/EKF-Yaw.py
+  scripts/dummy_script.py
   DESTINATION lib/${PROJECT_NAME}
 )
+
 
 # Include Cpp "include" directory
 include_directories(include)
@@ -63,9 +47,8 @@ install(TARGETS
 
 ################ INSTALL LAUNCH, ETC #################
 install(DIRECTORY
-  config
+  # add directories here
   launch
-  rviz
   DESTINATION share/${PROJECT_NAME})
 
 ament_package()

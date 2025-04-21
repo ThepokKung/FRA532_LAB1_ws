@@ -19,7 +19,6 @@ def generate_launch_description():
     pkg_share = get_package_share_directory('robot_description')
     xacro_file = os.path.join(pkg_share, 'description', 'robot-main.xacro')
     robot_description_config = xacro.process_file(xacro_file)
-    params = {'robot_description': robot_description_config.toxml(), 'use_sim_time': use_sim_time}
     
     # Create a robot_state_publisher node
     params = {'robot_description': robot_description_config.toxml(), 'use_sim_time': use_sim_time}
