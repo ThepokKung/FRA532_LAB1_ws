@@ -55,7 +55,7 @@ class PathTrackingPurePursuit(Node):
         self.declare_parameter('K_dd', 1.0)
         self.declare_parameter('min_ld', 0.5)
         self.declare_parameter('max_ld', 2.0)
-        self.declare_parameter('linear_velocity', 1.0)
+        self.declare_parameter('linear_velocity', 0.5)
         self.declare_parameter('wheelbase', 0.3)
 
         self.lookahead_distance = self.get_parameter(

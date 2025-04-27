@@ -68,7 +68,7 @@ class PathTrackingStanleyController(Node):
         self.declare_parameter('switch_threshold', 1.0)
         self.declare_parameter('max_speed', 1.0)
         self.declare_parameter('max_steer', 0.7854)
-        self.declare_parameter('linear_velocity', 1.0)
+        self.declare_parameter('linear_velocity', 0.5)
         self.Kp_v = self.get_parameter('Kp_v').value
         self.k_cross = self.get_parameter('k_cross').value  # Gain for cross-track error
         self.k_soft = self.get_parameter('k_soft').value    # Softening constant to avoid instability
