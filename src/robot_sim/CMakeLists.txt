@@ -29,6 +29,8 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   # scripts/dummy_script.py
   scripts/track_robot.py
+  scripts/path_pub.py
+  scripts/path_track_robot.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

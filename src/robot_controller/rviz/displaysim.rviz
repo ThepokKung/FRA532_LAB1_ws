@@ -10,10 +10,10 @@ Panels:
         - /Yaw_rate1/Shape1
         - /Single_track1/Shape1
         - /Double_trac1/Shape1
-        - /Fake_GPS1
         - /Fake_GPS1/Shape1
-        - /EKF1
         - /EKF1/Shape1
+        - /Path1/Topic1
+        - /Robot_path1
       Splitter Ratio: 0.5
     Tree Height: 518
   - Class: rviz_common/Selection
@@ -208,7 +208,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: true
+      Enabled: false
       Keep: 100
       Name: Groud_truth
       Position Tolerance: 0.10000000149011612
@@ -229,7 +229,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /ground_truth/pose
-      Value: true
+      Value: false
     - Angle Tolerance: 0.10000000149011612
       Class: rviz_default_plugins/Odometry
       Covariance:
@@ -439,6 +439,62 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /ekf/odom
       Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /path
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 246; 211; 45
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.029999999329447746
+      Name: Robot_path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_path_track
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -494,11 +550,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 82.46023559570312
+      Scale: 147.41586303710938
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 3.9454963207244873
-      Y: 1.1593717336654663
+      X: 8.982213020324707
+      Y: -0.1835547685623169
     Saved: ~
 Window Geometry:
   Displays:

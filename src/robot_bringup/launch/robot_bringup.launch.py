@@ -47,11 +47,25 @@ def generate_launch_description():
         executable='fake_gps.py',
         name='gps_node'
     )
+    
+    path_pub_node = Node(
+        package='robot_sim',
+        executable='path_pub.py',
+        name='path_pub_node'
+    )
+
+    path_track_node = Node(
+        package='robot_sim',
+        executable='path_track_robot.py',
+        name='path_track_node'
+    )
 
     return LaunchDescription([
         steering_mode_arg,
         sim,
         steering_model_basic,
         steering_model_nscc,
-        gps_node
+        gps_node,
+        path_pub_node,
+        path_track_node
     ])
