@@ -67,11 +67,15 @@ class PathTrackingStanleyController(Node):
         self.declare_parameter('k_soft', 0.1)
         self.declare_parameter('switch_threshold', 1.0)
         self.declare_parameter('max_speed', 1.0)
+        self.declare_parameter('max_steer', 0.7854)
+        self.declare_parameter('linear_velocity', 1.0)
         self.Kp_v = self.get_parameter('Kp_v').value
         self.k_cross = self.get_parameter('k_cross').value  # Gain for cross-track error
         self.k_soft = self.get_parameter('k_soft').value    # Softening constant to avoid instability
         self.switch_threshold = self.get_parameter('switch_threshold').value    # Distance error threshold for switching waypoints
         self.max_speed = self.get_parameter('max_speed').value
+        self.max_steer = self.get_parameter('max_steer').value
+        self.linear_velocity = self.get_parameter('linear_velocity').value
 
         # --- Vehicle and Controller Parameters ---
         self.declare_parameter('wheelbase', 0.20)    # L (m)
@@ -86,19 +90,22 @@ class PathTrackingStanleyController(Node):
         self.current_x = 0.0
         self.current_y = 0.0
         self.current_yaw = 0.0
+        self.current_speed = 0.0
 
         self.last_distance_error = float('inf')
 
         self.get_logger().info("🚀 Stanley Path Tracking Node Initialized")
 
     def odom_callback(self, msg: Odometry):
-        """Update the current pose from /ground_truth/pose."""
         self.current_x = msg.pose.pose.position.x
         self.current_y = msg.pose.pose.position.y
         orientation = msg.pose.pose.orientation
         q = [orientation.x, orientation.y, orientation.z, orientation.w]
         _, _, yaw = euler_from_quaternion(q)
         self.current_yaw = yaw
+
+        # << ADD THIS >>
+        self.current_speed = msg.twist.twist.linear.x
 
     def update_target(self):
         """Update the target waypoint based on the current path index."""
@@ -118,49 +125,46 @@ class PathTrackingStanleyController(Node):
         self.cmd_vel_pub.publish(cmd)
 
     def control_loop(self):
-        # Calculate position error
-        error_x = self.target_x - self.current_x
-        error_y = self.target_y - self.current_y
-        distance_error = math.hypot(error_x, error_y)
-        desired_heading = math.atan2(error_y, error_x)
-        heading_error = normalize_angle(desired_heading - self.current_yaw)
+        # 1) stop if we’re done
+        if self.path_index >= len(self.path)-1:
+            self.publish_cmd(0.0, 0.0)
+            return
 
-        # Switch to next waypoint if close enough
-        if distance_error < self.switch_threshold:
-            if self.path_index + 1 < len(self.path):
-                self.path_index += 1
-                self.update_target()
-                self.get_logger().info(f"✅ Reached waypoint {self.path_index - 1}; switching to waypoint {self.path_index}")
-            else:
-                self.publish_cmd(0.0, 0.0)
-                self.get_logger().info("🏁 Path tracking completed")
-                return
+        # 2) front-axle pose
+        fx = self.current_x + (self.wheelbase/2.0)*math.cos(self.current_yaw)
+        fy = self.current_y + (self.wheelbase/2.0)*math.sin(self.current_yaw)
 
-        # Stanley Controller
-        # Use constant speed (v_const) for computing cross-track steering term.
-        v_const = self.Kp_v  # Alternatively, set a different constant speed if needed
-        # Compute cross-track error by projecting the error vector onto a vector perpendicular to current heading.
-        perp_angle = self.current_yaw + math.pi / 2.0
-        cross_track_error = np.dot(np.array([math.cos(perp_angle), math.sin(perp_angle)]),np.array([error_x, error_y]))
-        cross_track_steering = math.atan2(self.k_cross * cross_track_error, v_const + self.k_soft)
-        control_angular = heading_error + cross_track_steering
-        control_linear = v_const  # Use constant speed command
+        # 3) nearest-path-point
+        dx = [fx - wp['x'] for wp in self.path]
+        dy = [fy - wp['y'] for wp in self.path]
+        self.path_index = int(np.argmin(np.hypot(dx, dy)))
+        target = self.path[self.path_index]
 
-        # Limit commands
-        control_linear = np.clip(control_linear, -self.max_speed, self.max_speed)
-        control_angular = np.clip(control_angular, -self.max_speed, self.max_speed)
+        # 4) cross-track error signed
+        if self.path_index==0:
+            x_prev, y_prev = self.path[0]['x'], self.path[0]['y']
+        else:
+            x_prev, y_prev = self.path[self.path_index-1]['x'], self.path[self.path_index-1]['y']
+        x_t, y_t = target['x'], target['y']
+        dx_seg, dy_seg = x_t-x_prev, y_t-y_prev
+        # projection (optional clamp u to [0,1])
+        u = ((fx-x_prev)*dx_seg + (fy-y_prev)*dy_seg) / (dx_seg*dx_seg+dy_seg*dy_seg)
+        x_proj, y_proj = x_prev + u*dx_seg, y_prev + u*dy_seg
+        e_ct = ((fx-x_proj)*dy_seg - (fy-y_proj)*dx_seg)/math.hypot(dx_seg,dy_seg)
 
-        # Publish command
-        self.publish_cmd(control_linear, control_angular)
+        # 5) heading error
+        θ_e = normalize_angle(target['yaw'] - self.current_yaw)
 
-        # Log details
-        self.get_logger().info(
-            f"Target: ({self.target_x:.2f}, {self.target_y:.2f}, yaw: {math.degrees(self.target_yaw):.1f}°) | "
-            f"Error: {distance_error:.2f} m, {math.degrees(heading_error):.2f}° | "
-            f"Cmd: linear={control_linear:.2f}, angular={math.degrees(control_angular):.2f}°/s"
-        )
+        # 6) Stanley law → steering angle δ
+        v = max(self.current_speed, 1e-3)
+        δ = θ_e + math.atan2(self.k_cross * e_ct, v + self.k_soft)
+        δ = float(np.clip(δ, -self.max_steer, self.max_steer))
 
-        self.last_distance_error = distance_error
+        # 7) to angular velocity
+        ω = (self.linear_velocity * math.tan(δ)) / self.wheelbase
+
+        # 8) publish
+        self.publish_cmd(self.linear_velocity, ω)
 
 
 def main(args=None):

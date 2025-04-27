@@ -26,7 +26,8 @@ class PathTrackingPID(Node):
         if os.path.exists(path_file):
             with open(path_file, 'r') as file:
                 self.path = yaml.safe_load(file)
-            self.get_logger().info(f"✅ Loaded path with {len(self.path)} waypoints from {path_file}")
+            self.get_logger().info(
+                f"✅ Loaded path with {len(self.path)} waypoints from {path_file}")
         else:
             self.get_logger().error(f"❌ Path file not found: {path_file}")
             self.path = []
@@ -45,10 +46,11 @@ class PathTrackingPID(Node):
 
         # Lookahead threshold: distance threshold to consider a waypoint reached
         self.declare_parameter('lookahead_threshold', 0.5)
-        self.lookahead_threshold = self.get_parameter('lookahead_threshold').value
+        self.lookahead_threshold = self.get_parameter(
+            'lookahead_threshold').value
 
         # Constant linear velocity (m/s)
-        self.declare_parameter('linear_velocity', 20.0)
+        self.declare_parameter('linear_velocity', 1.0)
         self.linear_velocity = self.get_parameter('linear_velocity').value
 
         # PID state variables
@@ -60,7 +62,8 @@ class PathTrackingPID(Node):
         self.current_target_index = 0
 
         # Subscriber
-        self.odom_subscriber = self.create_subscription(Odometry, '/ground_truth/pose', self.odom_callback, 10)
+        self.odom_subscriber = self.create_subscription(
+            Odometry, '/ground_truth/pose', self.odom_callback, 10)
 
         # Publisher
         self.cmd_vel_publisher = self.create_publisher(Twist, 'cmd_vel', 10)
@@ -80,14 +83,17 @@ class PathTrackingPID(Node):
 
         self.get_logger().info("🚀 PID Path Tracking Node Initialized")
         self.get_logger().info(f"🔹 Kp={self.Kp}, Ki={self.Ki}, Kd={self.Kd}")
-        self.get_logger().info(f"🔹 Lookahead Threshold = {self.lookahead_threshold} m")
-        self.get_logger().info(f"🔹 Linear Velocity = {self.linear_velocity} m/s")
+        self.get_logger().info(
+            f"🔹 Lookahead Threshold = {self.lookahead_threshold} m")
+        self.get_logger().info(
+            f"🔹 Linear Velocity = {self.linear_velocity} m/s")
 
     def odom_callback(self, msg: Odometry):
         self.current_x = msg.pose.pose.position.x
         self.current_y = msg.pose.pose.position.y
         orientation_q = msg.pose.pose.orientation
-        orientation_list = [orientation_q.x,orientation_q.y, orientation_q.z, orientation_q.w]
+        orientation_list = [orientation_q.x,
+                            orientation_q.y, orientation_q.z, orientation_q.w]
         roll, pitch, yaw = euler_from_quaternion(orientation_list)
         self.current_yaw = yaw
 
@@ -103,14 +109,10 @@ class PathTrackingPID(Node):
         self.cmd_vel_publisher.publish(twist_msg)
 
     def control_loop(self):
-        if self.last_error < 0.5:
-            if self.path_index + 1 < len(self.path):
-                self.path_index += 1
-                self.update_target()
-            else:
-                self.publish_cmd(0.0, 0.0)
-                self.get_logger().info('🏁 Path tracking completed lap')
-                return
+        if self.path_index >= len(self.path):
+            self.publish_cmd(0.0, 0.0)
+            self.get_logger().info('🏁 Path tracking completed lap')
+            return
 
         # Calculate the error
         error_x = self.target_x - self.current_x
@@ -120,25 +122,36 @@ class PathTrackingPID(Node):
 
         distance_error = math.sqrt(error_x**2 + error_y**2)
 
+        # Check if close enough to waypoint
+        if distance_error < self.lookahead_threshold:
+            self.path_index += 1
+            if self.path_index < len(self.path):
+                self.update_target()
+            return
+
+        # --- PID Control Linear ---
         self.error_sum += distance_error
         error_diff = distance_error - self.last_error
 
-        # PID control
         control_linear = self.Kp * distance_error + \
-            self.Ki * self.error_sum + self.Kd * error_diff
+                        self.Ki * self.error_sum + \
+                        self.Kd * error_diff
+
+        # --- PID Control Angular ---
         control_angular = self.Kp_omega * error_yaw
 
-        # Limit the speed
+        # --- Limit Velocity ---
         control_linear = np.clip(control_linear, -self.max_speed, self.max_speed)
         control_angular = np.clip(control_angular, -self.max_speed, self.max_speed)
 
-        # Publish Control Commands
+        # Publish control
         self.publish_cmd(control_linear, control_angular)
 
-        self.get_logger().info(f'🎯 Target waypoint: {self.target_x}, {self.target_y}, {self.target_yaw}')
-        self.get_logger().info(f'   Error: {distance_error}, Yaw Error: {error_yaw}, Linear: {control_linear}, Angular: {control_angular}')
+        self.get_logger().info(f'🎯 Target waypoint: {self.target_x}, {self.target_y}')
+        self.get_logger().info(f'   Distance Error: {distance_error:.3f}, Yaw Error: {error_yaw:.3f}')
+        self.get_logger().info(f'   Control Linear: {control_linear:.3f}, Control Angular: {control_angular:.3f}')
 
-        # Update the error
+        # Update
         self.last_error = distance_error
         self.yaw_error = error_yaw
 

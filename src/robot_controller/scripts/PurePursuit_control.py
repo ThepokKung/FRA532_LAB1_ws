@@ -55,7 +55,7 @@ class PathTrackingPurePursuit(Node):
         self.declare_parameter('K_dd', 1.0)
         self.declare_parameter('min_ld', 0.5)
         self.declare_parameter('max_ld', 2.0)
-        self.declare_parameter('linear_velo_pure', 0.5)
+        self.declare_parameter('linear_velocity', 1.0)
         self.declare_parameter('wheelbase', 0.3)
 
         self.lookahead_distance = self.get_parameter(
@@ -63,7 +63,7 @@ class PathTrackingPurePursuit(Node):
         self.K_dd = self.get_parameter('K_dd').value
         self.min_ld = self.get_parameter('min_ld').value
         self.max_ld = self.get_parameter('max_ld').value
-        self.linear_velo_pure = self.get_parameter('linear_velo_pure').value
+        self.linear_velocity = self.get_parameter('linear_velocity').value
         self.wheelbase = self.get_parameter('wheelbase').value
 
         # --- Internal State ---
@@ -141,7 +141,7 @@ class PathTrackingPurePursuit(Node):
             return
 
         # 3) compute your dynamic look-ahead length (don’t overwrite the parameter)
-        ld = np.clip(self.K_dd * self.linear_velo_pure, self.min_ld, self.max_ld)
+        ld = np.clip(self.K_dd * self.linear_velocity, self.min_ld, self.max_ld)
 
         # 4) scan forward from idx to find the first point ≥ ld away
         lookahead = None
@@ -174,10 +174,10 @@ class PathTrackingPurePursuit(Node):
         alpha = math.atan2(y_r, x_r)
         delta = math.atan2(2 * self.wheelbase * math.sin(alpha), ld)
         delta = max(-0.6, min(0.6, delta))
-        omega = (self.linear_velo_pure * math.tan(delta)) / self.wheelbase
+        omega = (self.linear_velocity * math.tan(delta)) / self.wheelbase
 
         # 7) publish
-        self.pub_cmd(self.linear_velo_pure, omega)
+        self.pub_cmd(self.linear_velocity, omega)
 
         # 8) store for next cycle
         self.prev_idx = idx
