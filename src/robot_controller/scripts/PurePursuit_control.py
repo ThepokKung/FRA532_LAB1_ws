@@ -25,9 +25,11 @@ from nav_msgs.msg import Odometry
 from ament_index_python.packages import get_package_share_directory
 from tf_transformations import euler_from_quaternion
 
+
 def normalize_angle(angle: float) -> float:
     """Normalize an angle to [-pi, pi]."""
     return math.atan2(math.sin(angle), math.cos(angle))
+
 
 class PathTrackingPurePursuit(Node):
     def __init__(self):
@@ -40,8 +42,10 @@ class PathTrackingPurePursuit(Node):
             with open(path_file, 'r') as file:
                 data = yaml.safe_load(file)
             # Support both dictionary with 'path' key and direct list.
-            self.path = data.get('path', data) if isinstance(data, dict) else data
-            self.get_logger().info(f"✅ Loaded path with {len(self.path)} waypoints from {path_file}")
+            self.path = data.get('path', data) if isinstance(
+                data, dict) else data
+            self.get_logger().info(
+                f"✅ Loaded path with {len(self.path)} waypoints from {path_file}")
         else:
             self.get_logger().error(f"❌ Path file not found: {path_file}")
             self.path = []
@@ -53,9 +57,10 @@ class PathTrackingPurePursuit(Node):
         self.declare_parameter('max_ld', 2.0)
         self.declare_parameter('linear_velo_pure', 0.5)
         self.declare_parameter('wheelbase', 0.3)
-        
-        self.lookahead_distance = self.get_parameter('lookahead_distance').value
-        self.K_dd = self.get_parameter('K_dd').value  
+
+        self.lookahead_distance = self.get_parameter(
+            'lookahead_distance').value
+        self.K_dd = self.get_parameter('K_dd').value
         self.min_ld = self.get_parameter('min_ld').value
         self.max_ld = self.get_parameter('max_ld').value
         self.linear_velo_pure = self.get_parameter('linear_velo_pure').value
@@ -66,13 +71,30 @@ class PathTrackingPurePursuit(Node):
         self.robot_x = 0.0
         self.robot_y = 0.0
         self.robot_yaw = 0.0
+        if self.path:
+            self.start_x = self.path[0]['x']
+            self.start_y = self.path[0]['y']
+
+        self.start_x = self.path[0]['x']
+        self.start_y = self.path[0]['y']
+        self.final_idx = len(self.path) - 1
+
+        self.prev_idx = 0
+        self.left_start = False
+        self.lap_done = False
 
         # --- ROS Interfaces ---
-        self.create_subscription(Odometry, '/ground_truth/pose', self.odom_callback, 10)
+        self.create_subscription(
+            Odometry, '/ground_truth/pose', self.odom_callback, 10)
         self.cmd_vel_publisher = self.create_publisher(Twist, 'cmd_vel', 10)
-        self.create_timer(0.1, self.control_loop)
+        self.control_timer = self.create_timer(0.1, self.control_loop)
 
         self.get_logger().info("🚀 Pure Pursuit Tracking Node Initialized")
+
+    def search_nearest_point_index(self) -> int:
+        dists = [math.hypot(p['x'] - self.robot_x, p['y'] - self.robot_y)
+                 for p in self.path]
+        return int(np.argmin(dists))
 
     def odom_callback(self, msg: Odometry):
         self.robot_x = msg.pose.pose.position.x
@@ -94,52 +116,74 @@ class PathTrackingPurePursuit(Node):
         return math.atan2(math.sin(angle), math.cos(angle))
 
     def control_loop(self):
-        if self.current_target_idx >= len(self.path):
-            # self.current_target_idx = 0  # Reset index to loop the path
+        if not self.path or self.lap_done:
+            return
+        # 0) have we left the start circle yet?
+        d0 = math.hypot(self.robot_x - self.start_x, self.robot_y - self.start_y)
+        if not self.left_start and d0 > self.min_ld:
+            self.left_start = True
+
+        # 1) find the index of the closest path point right now
+        idx = self.search_nearest_point_index()
+
+        # 2) wrap detection: only if
+        #    a) we've left start,
+        #    b) we were already past 90% of the path,
+        #    c) and idx just dropped strictly below prev_idx
+        min_for_wrap = int(0.9 * self.final_idx)
+        if (self.left_start
+            and self.prev_idx >= min_for_wrap
+            and idx < self.prev_idx):
+            self.get_logger().info("🏁 Full lap completed. Stopping.")
             self.pub_cmd(0.0, 0.0)
-            self.get_logger().info("🏁 Path tracking completed.")
-            return # Stop
-        
-        # Search nearest point index
-        # self.serch_nearest_point_index()
+            self.control_timer.cancel()
+            self.lap_done = True
+            return
 
-        # Implement Here
-        target = self.path[self.current_target_idx]
-        target_x, target_y = target['x'], target['y']
+        # 3) compute your dynamic look-ahead length (don’t overwrite the parameter)
+        ld = np.clip(self.K_dd * self.linear_velo_pure, self.min_ld, self.max_ld)
 
-        # Distance Calculation
-        dx = target_x - self.robot_x
-        dy = target_y - self.robot_y
-        distance_error = math.hypot(dx, dy)
+        # 4) scan forward from idx to find the first point ≥ ld away
+        lookahead = None
+        for p in self.path[idx:]:
+            if math.hypot(p['x'] - self.robot_x,
+                          p['y'] - self.robot_y) >= ld:
+                lookahead = p
+                break
 
-        # If distance < lookahead_distance, it moves to the next waypoint.
-        if distance_error < self.lookahead_distance:
-            self.current_target_idx += 1
-            self.get_logger().info(f"✅ Reached waypoint {self.current_target_idx - 1}, moving to waypoint {self.current_target_idx}")
+        #  ────────────────────────────────────────────
+        #  If we didn’t find one:
+        #   • Before leaving start → head to the *next* point in the list
+        #   • After leaving start  → chase the *final* waypoint (so you close the loop)
+        #  ────────────────────────────────────────────
+        if lookahead is None:
+            if not self.left_start:
+                # pick the very next point so you don’t jump to the end
+                next_idx = min(idx + 1, self.final_idx)
+                lookahead = self.path[next_idx]
+            else:
+                lookahead = self.path[self.final_idx]
 
-        # Heading Angle Calculation
-        target_yaw = math.atan2(dy, dx)
-        alpha = target_yaw - self.robot_yaw
-        # Normalize an angle to [-pi, pi]
-        alpha = self.normalize_angle(alpha)
+        # 5) transform into robot frame
+        dx = lookahead['x'] - self.robot_x
+        dy = lookahead['y'] - self.robot_y
+        x_r = math.cos(self.robot_yaw)*dx + math.sin(self.robot_yaw)*dy
+        y_r = -math.sin(self.robot_yaw)*dx + math.cos(self.robot_yaw)*dy
 
-        # Steering Angle Calculation (β)
-        self.lookahead_distance = np.clip(self.K_dd * self.linear_velo_pure, self.min_ld, self.max_ld)
-        beta = math.atan2(2 * self.wheelbase * math.sin(alpha) / self.lookahead_distance, 1.0)
-        beta = max(-0.6, min(beta, 0.6))
+        # 6) pure-pursuit steering law
+        alpha = math.atan2(y_r, x_r)
+        delta = math.atan2(2 * self.wheelbase * math.sin(alpha), ld)
+        delta = max(-0.6, min(0.6, delta))
+        omega = (self.linear_velo_pure * math.tan(delta)) / self.wheelbase
 
-        # Angular Velocity Calculation (ω)
-        angular_velocity = (self.linear_velo_pure * math.tan(beta)) / self.wheelbase
+        # 7) publish
+        self.pub_cmd(self.linear_velo_pure, omega)
 
-        # Publish cmd_vel
-        self.pub_cmd(self.linear_velo_pure, angular_velocity)
-        
-        # Log status
+        # 8) store for next cycle
+        self.prev_idx = idx
         self.get_logger().info(
-            f"Target: ({target_x:.2f}, {target_y:.2f}) | "
-            f"Error: dist={distance_error:.2f}, alpha={math.degrees(alpha):.2f}° | "
-            f"Cmd: linear={self.linear_velo_pure:.2f}, angular={math.degrees(angular_velocity):.2f}°/s"
-        )
+            f"pp: prev_idx={self.prev_idx}  idx={idx}  left_start={self.left_start}")
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -151,6 +195,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
