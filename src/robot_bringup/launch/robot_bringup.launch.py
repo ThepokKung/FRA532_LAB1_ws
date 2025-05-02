@@ -2,7 +2,7 @@
 import os
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, TimerAction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -54,6 +54,11 @@ def generate_launch_description():
         name='path_pub_node'
     )
 
+    delayed_path_pub = TimerAction(
+        period=2.0,          # wait 2 seconds
+        actions=[path_pub_node]
+    )
+
     path_track_node = Node(
         package='robot_sim',
         executable='path_track_robot.py',
@@ -66,6 +71,7 @@ def generate_launch_description():
         steering_model_basic,
         steering_model_nscc,
         gps_node,
-        path_pub_node,
+        # path_pub_node,
+        delayed_path_pub,
         path_track_node
     ])
