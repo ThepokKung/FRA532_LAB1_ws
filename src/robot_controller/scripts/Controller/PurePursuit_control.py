@@ -35,154 +35,164 @@ class PathTrackingPurePursuit(Node):
     def __init__(self):
         super().__init__('path_tracking_pure_pursuit')
 
-        # --- Load Path ---
-        path_file = os.path.join(get_package_share_directory('robot_controller'),
-                                 'config', 'path.yaml')
+        # YAML file path
+        path_file = os.path.join(
+            get_package_share_directory('robot_controller'),
+            'config',
+            'path.yaml'
+        )
+
+        # Load the path from the YAML file
         if os.path.exists(path_file):
             with open(path_file, 'r') as file:
-                data = yaml.safe_load(file)
-            # Support both dictionary with 'path' key and direct list.
-            self.path = data.get('path', data) if isinstance(
-                data, dict) else data
+                self.path = yaml.safe_load(file)
             self.get_logger().info(
                 f"✅ Loaded path with {len(self.path)} waypoints from {path_file}")
         else:
             self.get_logger().error(f"❌ Path file not found: {path_file}")
             self.path = []
 
-        # --- Controller Parameters ---
-        self.declare_parameter('lookahead_distance', 0.5)
+        # Linerar contoller using
+        self.declare_parameter('use_linear', False)
+        self.use_linear = self.get_parameter('use_linear').value
+        if self.use_linear:
+            self.get_logger().info("🔹 Using pure pursuit controller")
+        else:
+            self.get_logger().info("🔹 Using linear controller")
+
+        # EKF state variables
+        self.declare_parameter('ekf_using', False)
+        self.ekf_using = self.get_parameter('ekf_using').value
+
+        # Set Contoller parameters
+        self.declare_parameter('lookahead_distance', 0.5)  # Default value
         self.declare_parameter('K_dd', 1.0)
         self.declare_parameter('min_ld', 0.5)
         self.declare_parameter('max_ld', 2.0)
         self.declare_parameter('linear_velocity', 0.5)
         self.declare_parameter('wheelbase', 0.3)
-
-        self.lookahead_distance = self.get_parameter(
-            'lookahead_distance').value
+        self.declare_parameter('lookahead_threshold', 0.1)
+        
+        # Load Controller parameters
+        self.lookahead_distance = self.get_parameter('lookahead_distance').value
         self.K_dd = self.get_parameter('K_dd').value
         self.min_ld = self.get_parameter('min_ld').value
         self.max_ld = self.get_parameter('max_ld').value
         self.linear_velocity = self.get_parameter('linear_velocity').value
         self.wheelbase = self.get_parameter('wheelbase').value
+        self.lookahead_threshold = self.get_parameter('lookahead_threshold').value
 
-        # --- Internal State ---
-        self.current_target_idx = 0
-        self.robot_x = 0.0
-        self.robot_y = 0.0
-        self.robot_yaw = 0.0
-        if self.path:
-            self.start_x = self.path[0]['x']
-            self.start_y = self.path[0]['y']
+        # Robot state variables
+        self.current_x = 0.0
+        self.current_y = 0.0
+        self.current_yaw = 0.0
 
-        self.start_x = self.path[0]['x']
-        self.start_y = self.path[0]['y']
-        self.final_idx = len(self.path) - 1
+        # Controller state variables
+        self.integral_error = 0.0
+        self.prev_error = 0.0
+        self.prev_time = None
 
-        self.prev_idx = 0
-        self.left_start = False
-        self.lap_done = False
+        # Path following parameters
+        self.path_index = 0
 
-        # --- ROS Interfaces ---
-        self.create_subscription(
-            Odometry, '/ground_truth/pose', self.odom_callback, 10)
+        # Target state variables
+        self.target_x = 0.0
+        self.target_y = 0.0
+        self.target_yaw = 0.0
+        self.update_target()  # Initialize target
+
+        # Subscriber
+        if self.ekf_using:
+            self.get_logger().info("🔹 Using EKF for odometry")
+            self.odom_subscriber = self.create_subscription(
+                Odometry, '/ekf/odom', self.odom_callback, 10)
+        else:
+            self.get_logger().info("🔹 Using ground truth for odometry")
+            self.odom_subscriber = self.create_subscription(
+                Odometry, '/ground_truth/pose', self.odom_callback, 10)
+
+        # Publisher
         self.cmd_vel_publisher = self.create_publisher(Twist, 'cmd_vel', 10)
-        self.control_timer = self.create_timer(0.1, self.control_loop)
 
+        # Timer
+        self.timer = self.create_timer(0.1, self.control_loop)
+
+        # Log initialization
         self.get_logger().info("🚀 Pure Pursuit Tracking Node Initialized")
-
-    def search_nearest_point_index(self) -> int:
-        dists = [math.hypot(p['x'] - self.robot_x, p['y'] - self.robot_y)
-                 for p in self.path]
-        return int(np.argmin(dists))
+        self.get_logger().info(f"🔹 min_ld={self.min_ld}, max_ld={self.max_ld}")
+        self.get_logger().info(f"🔹 Linear velocity = {self.linear_velocity} m/s")
 
     def odom_callback(self, msg: Odometry):
-        self.robot_x = msg.pose.pose.position.x
-        self.robot_y = msg.pose.pose.position.y
-        orientation = msg.pose.pose.orientation
-        q = [orientation.x, orientation.y, orientation.z, orientation.w]
-        _, _, yaw = euler_from_quaternion(q)
-        self.robot_yaw = yaw
+        self.current_x = msg.pose.pose.position.x
+        self.current_y = msg.pose.pose.position.y
+        orientation_q = msg.pose.pose.orientation
+        orientation_list = [orientation_q.x, orientation_q.y, orientation_q.z, orientation_q.w]
+        roll, pitch, yaw = euler_from_quaternion(orientation_list)
+        self.current_yaw = yaw
 
-    def pub_cmd(self, linear: float, angular: float):
-        """Publish the Twist command message."""
-        cmd = Twist()
-        cmd.linear.x = linear
-        cmd.angular.z = angular
-        self.cmd_vel_publisher.publish(cmd)
+    def update_target(self):
+        if self.path_index < len(self.path):
+            self.target_x = self.path[self.path_index]['x']
+            self.target_y = self.path[self.path_index]['y'] 
+            self.target_yaw = self.path[self.path_index]['yaw']
+
+    def publish_cmd(self, linear, angular):
+        """Publishes the velocity command."""
+        twist_msg = Twist()
+        twist_msg.linear.x = linear
+        twist_msg.angular.z = angular
+        self.cmd_vel_publisher.publish(twist_msg)
 
     def normalize_angle(self, angle):
         """Normalize an angle to [-pi, pi]."""
         return math.atan2(math.sin(angle), math.cos(angle))
 
     def control_loop(self):
-        if not self.path or self.lap_done:
-            return
-        # 0) have we left the start circle yet?
-        d0 = math.hypot(self.robot_x - self.start_x, self.robot_y - self.start_y)
-        if not self.left_start and d0 > self.min_ld:
-            self.left_start = True
-
-        # 1) find the index of the closest path point right now
-        idx = self.search_nearest_point_index()
-
-        # 2) wrap detection: only if
-        #    a) we've left start,
-        #    b) we were already past 90% of the path,
-        #    c) and idx just dropped strictly below prev_idx
-        min_for_wrap = int(0.9 * self.final_idx)
-        if (self.left_start
-            and self.prev_idx >= min_for_wrap
-            and idx < self.prev_idx):
-            self.get_logger().info("🏁 Full lap completed. Stopping.")
-            self.pub_cmd(0.0, 0.0)
-            self.control_timer.cancel()
-            self.lap_done = True
+        # Check if path is completed
+        if self.path_index >= len(self.path):
+            self.get_logger().info('🏁 Path tracking completed lap')
+            self.publish_cmd(0.0, 0.0)
             return
 
-        # 3) compute your dynamic look-ahead length (don’t overwrite the parameter)
-        ld = np.clip(self.K_dd * self.linear_velocity, self.min_ld, self.max_ld)
+        # Calculate the error
+        error_x = self.target_x - self.current_x
+        error_y = self.target_y - self.current_y
+        error_yaw = math.atan2(error_y, error_x) - self.current_yaw
+        # Normalize angle to [-π, π]
+        error_yaw = math.atan2(math.sin(error_yaw), math.cos(error_yaw))
 
-        # 4) scan forward from idx to find the first point ≥ ld away
-        lookahead = None
-        for p in self.path[idx:]:
-            if math.hypot(p['x'] - self.robot_x,
-                          p['y'] - self.robot_y) >= ld:
-                lookahead = p
-                break
+        distance_error = math.sqrt(error_x**2 + error_y**2)
 
-        #  ────────────────────────────────────────────
-        #  If we didn’t find one:
-        #   • Before leaving start → head to the *next* point in the list
-        #   • After leaving start  → chase the *final* waypoint (so you close the loop)
-        #  ────────────────────────────────────────────
-        if lookahead is None:
-            if not self.left_start:
-                # pick the very next point so you don’t jump to the end
-                next_idx = min(idx + 1, self.final_idx)
-                lookahead = self.path[next_idx]
-            else:
-                lookahead = self.path[self.final_idx]
+        if distance_error < self.lookahead_distance:
+            self.path_index += 1
+            self.update_target()
+            return
 
-        # 5) transform into robot frame
-        dx = lookahead['x'] - self.robot_x
-        dy = lookahead['y'] - self.robot_y
-        x_r = math.cos(self.robot_yaw)*dx + math.sin(self.robot_yaw)*dy
-        y_r = -math.sin(self.robot_yaw)*dx + math.cos(self.robot_yaw)*dy
+        # Calculate the lookahead distance
+        self.lookahead_distance = self.K_dd * self.linear_velocity
+        self.lookahead_distance = np.clip(self.lookahead_distance, self.min_ld, self.max_ld)
 
-        # 6) pure-pursuit steering law
-        alpha = math.atan2(y_r, x_r)
-        delta = math.atan2(2 * self.wheelbase * math.sin(alpha), ld)
-        delta = max(-0.6, min(0.6, delta))
-        omega = (self.linear_velocity * math.tan(delta)) / self.wheelbase
+        # Steering angle calculation (Beta)
+        beta = math.atan2(2 * self.wheelbase * math.sin(error_yaw), self.lookahead_distance)
+        # Normalize the steering angle
+        beta = self.normalize_angle(beta)
+        # Calculate the angular velocity
+        control_angular = beta * self.linear_velocity / self.wheelbase
 
-        # 7) publish
-        self.pub_cmd(self.linear_velocity, omega)
+        if self.use_linear:
+            # Linear velocity control
+            control_linear = self.linear_velocity * (1 - (distance_error / self.lookahead_distance)) #Wait for fix
+        else:
+            # Linear velocity control
+            control_linear = self.linear_velocity
 
-        # 8) store for next cycle
-        self.prev_idx = idx
-        self.get_logger().info(
-            f"pp: prev_idx={self.prev_idx}  idx={idx}  left_start={self.left_start}")
+        # Publish control
+        self.publish_cmd(control_linear, control_angular)
+
+        # Log information
+        self.get_logger().info(f'🎯 Target waypoint: {self.target_x:.3f}, {self.target_y:.3f}')
+        self.get_logger().info(f'   Distance Error: {distance_error:.3f}, Yaw Error: {error_yaw:.3f}')
+        self.get_logger().info(f'   Control Linear: {control_linear:.3f}, Control Angular: {control_angular:.3f}')
 
 
 def main(args=None):
