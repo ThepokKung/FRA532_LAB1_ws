@@ -1,18 +1,4 @@
 #!/usr/bin/env python3
-"""
-PathTrackingPurePursuit - Pure Pursuit Path Tracking Controller for Ackermann Steering Mobile Robot
-
-This node:
-  - Loads a planned path from a YAML file.
-  - Subscribes to the /ground_truth/pose topic.
-  - Uses a pure pursuit style controller to drive toward the current target waypoint.
-  - Publishes the velocity command on the cmd_vel topic.
-
-Assumptions:
-  - The path YAML file is either a list of waypoints or a dictionary with key "path".
-  - Each waypoint contains at least 'x' and 'y' (and optionally 'yaw').
-"""
-
 import os
 import math
 import numpy as np
@@ -53,7 +39,7 @@ class PathTrackingPurePursuit(Node):
             self.path = []
 
         # Linerar contoller using
-        self.declare_parameter('use_linear', False)
+        self.declare_parameter('use_linear_pure', False)
         self.use_linear = self.get_parameter('use_linear').value
         if self.use_linear:
             self.get_logger().info("🔹 Using pure pursuit controller")
@@ -70,7 +56,6 @@ class PathTrackingPurePursuit(Node):
         self.declare_parameter('min_ld', 0.5)
         self.declare_parameter('max_ld', 2.0)
         self.declare_parameter('linear_velocity', 0.5)
-        self.declare_parameter('wheelbase', 0.3)
         self.declare_parameter('lookahead_threshold', 0.1)
         
         # Load Controller parameters
@@ -79,8 +64,15 @@ class PathTrackingPurePursuit(Node):
         self.min_ld = self.get_parameter('min_ld').value
         self.max_ld = self.get_parameter('max_ld').value
         self.linear_velocity = self.get_parameter('linear_velocity').value
-        self.wheelbase = self.get_parameter('wheelbase').value
         self.lookahead_threshold = self.get_parameter('lookahead_threshold').value
+
+        # Set robot parameters
+        self.declare_parameter('wheelbase', 0.3)
+        self.declare_parameter('track_width', 0.13)    # W (m)
+
+        # Load robot parameters
+        self.wheelbase = self.get_parameter('wheelbase').value
+        self.track_width = self.get_parameter('track_width').value
 
         # Robot state variables
         self.current_x = 0.0
@@ -94,7 +86,7 @@ class PathTrackingPurePursuit(Node):
 
         # Path following parameters
         self.path_index = 0
-
+        
         # Target state variables
         self.target_x = 0.0
         self.target_y = 0.0
@@ -179,12 +171,14 @@ class PathTrackingPurePursuit(Node):
         # Calculate the angular velocity
         control_angular = beta * self.linear_velocity / self.wheelbase
 
-        if self.use_linear:
-            # Linear velocity control
-            control_linear = self.linear_velocity * (1 - (distance_error / self.lookahead_distance)) #Wait for fix
-        else:
-            # Linear velocity control
-            control_linear = self.linear_velocity
+        # if self.use_linear_pure:
+        #     # Linear velocity control
+        #     control_linear = self.linear_velocity * (1 - (distance_error / self.lookahead_distance)) #Wait for fix
+        # else:
+        #     # Linear velocity control
+        #     control_linear = self.linear_velocity
+
+        control_linear = self.linear_velocity
 
         # Publish control
         self.publish_cmd(control_linear, control_angular)
