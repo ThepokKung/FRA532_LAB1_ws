@@ -47,7 +47,6 @@ class RobotPathTrack(Node):
         self.path_msg.poses.append(post_robot_track)
         self.path_msg.header.stamp = self.get_clock().now().to_msg()
         self.publisher.publish(self.path_msg)
-        # self.get_logger().info("Path has been updated.")
 
     def clear_path_callback(self, request, response):
         self.path_msg.poses.clear()

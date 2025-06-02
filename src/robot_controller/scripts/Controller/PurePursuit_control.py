@@ -39,12 +39,12 @@ class PathTrackingPurePursuit(Node):
             self.path = []
 
         # Linerar contoller using
-        self.declare_parameter('use_linear_pure', False)
-        self.use_linear = self.get_parameter('use_linear').value
-        if self.use_linear:
-            self.get_logger().info("🔹 Using pure pursuit controller")
-        else:
-            self.get_logger().info("🔹 Using linear controller")
+        # self.declare_parameter('use_linear_pure', False)
+        # self.use_linear = self.get_parameter('use_linear').value
+        # if self.use_linear:
+        #     self.get_logger().info("🔹 Using pure pursuit controller")
+        # else:
+        #     self.get_logger().info("🔹 Using linear controller")
 
         # EKF state variables
         self.declare_parameter('ekf_using', False)
