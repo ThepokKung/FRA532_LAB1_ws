@@ -207,3 +207,4 @@ Where:
 
 # Authors
 * Kraiwich Vichakhot 65340500004
+* _Chawaphon Wachiraniramit 65340500014_
